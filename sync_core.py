@@ -105,6 +105,13 @@ def cmd_write() -> int:
         vendor = d / "vendor" / "predictor_core"
         for f in files:
             shutil.copy2(f, vendor / f.name)
+        # PRUNE (autoridade total): apaga qualquer .py no vendor que não esteja mais no
+        # core — lógica customizada/órfã num domínio é deletada, não tolerada.
+        payload_names = {f.name for f in files}
+        for stale in vendor.glob("*.py"):
+            if stale.name not in payload_names:
+                stale.unlink()
+                print(f"    prune: removido vendor/{stale.name} (não está mais no core)")
         out = {**canon, "synced_at": stamp, "source_version": source_version}
         (vendor / MANIFEST_NAME).write_text(
             json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
