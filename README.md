@@ -2,7 +2,7 @@
 
 **Esta pasta é a FONTE DA VERDADE.** Toda a lógica compartilhada da plataforma de
 previsão vive aqui e em nenhum outro lugar. Os domínios (`predictor-stocks`,
-`previsao-cripto`, `wc-predictor`) a consomem por **vendoring** — cópias carimbadas
+`previsao-cripto`, `wc-predictor-v2`) a consomem por **vendoring** — cópias carimbadas
 em `vendor/predictor_core/` dentro de cada um.
 
 Não há entrypoint. Não roda nada. É biblioteca de contratos.
@@ -13,9 +13,11 @@ Não há entrypoint. Não roda nada. É biblioteca de contratos.
 |---|---|
 | `stats.py` | O **pedágio de 2 lentes**: PSR (Lente 1, closed-form, não-normalidade) + `block_bootstrap_ci` pareado (Lente 2, autocorrelação + cross-correlação). Mais `sharpe`/`sortino`/`max_drawdown`/`ci_mean`. |
 | `infra.py` | SQLite isolado: `connect` (WAL + busy_timeout), `run_migrations` idempotente, `config_hash`. |
-| `net.py` | Contrato de ingestão desacoplada (download resiliente + integridade). |
-| `obs.py` | Observabilidade. **Em breve:** o contrato de telemetria JSONL (`emit_event`). |
-| `sync_core.py` | O **motor de distribuição** (tooling — não faz parte do payload). |
+| `net.py` | Rede unificada: download stdlib (COTAHIST) + camada async resiliente (httpx lazy + retry/transient para REST CoinGecko/SerpAPI/LLM). |
+| `obs.py` | Observabilidade + **telemetria JSONL** (`emit_event`, envelope rígido de 7 chaves; `read_events`). |
+| `settings.py` | Trava P0 de credenciais (`require_secrets`): chave ausente/falsa/`<16` chars => crash imediato (pydantic + fallback stdlib). |
+| `replay.py` | Anti-lookahead ESTRUTURAL ("feed, don't query"): `replay`/`PastView` — acessar o futuro levanta `LookaheadError`. |
+| `sync_core.py` | O **motor de distribuição** (tooling — não faz parte do payload; `--write` faz prune do que sai do core). |
 | `VERSION` | Carimbo da versão homologada. |
 
 ## A regra de ouro: escrita UNIDIRECIONAL
