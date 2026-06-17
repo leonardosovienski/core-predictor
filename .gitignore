@@ -1,0 +1,8 @@
+# Bytecode / cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# SO
+.DS_Store
+Thumbs.db
