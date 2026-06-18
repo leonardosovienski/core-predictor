@@ -9,8 +9,8 @@ Você nunca mais edita a matemática dentro do stocks ou do cripto: corrige AQUI
 o sync, e a correção propaga com integridade garantida — matando o "drift".
 
 Uso (de qualquer diretório):
-    py -3.12 sync_core.py --check     # relata o drift de cada consumidor (NÃO escreve)
-    py -3.12 sync_core.py --write     # propaga o núcleo p/ os vendors (grava manifest)
+    python sync_core.py --check     # relata o drift de cada consumidor (NÃO escreve)
+    python sync_core.py --write     # propaga o núcleo p/ os vendors (grava manifest)
 
 Segurança:
   - SÓ escreve em domínios que JÁ têm vendor/predictor_core/ (consumidores opt-in).

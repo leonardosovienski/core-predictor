@@ -35,8 +35,8 @@ divergência de código que era dívida técnica latente (3 implementações de 
 ## Uso
 
 ```powershell
-py -3.12 sync_core.py --check     # relata o drift de cada consumidor (não escreve)
-py -3.12 sync_core.py --write     # propaga o núcleo para os vendors (grava CORE_MANIFEST.json)
+python sync_core.py --check     # relata o drift de cada consumidor (não escreve)
+python sync_core.py --write     # propaga o núcleo para os vendors (grava CORE_MANIFEST.json)
 ```
 
 `--write` grava em cada vendor um `CORE_MANIFEST.json` (hash por arquivo + agregado +
