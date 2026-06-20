@@ -5,13 +5,14 @@ previsão vive aqui e em nenhum outro lugar. Os domínios (`predictor-stocks`,
 `previsao-cripto`, `wc-predictor-v2`) a consomem por **vendoring** — cópias carimbadas
 em `vendor/predictor_core/` dentro de cada um.
 
-Não há entrypoint. Não roda nada. É biblioteca de contratos.
+Não há entrypoint de runtime — é biblioteca de contratos. Tem suíte própria
+(`tests/`, 5 testes do `sync_core`): `C:\Claude\.venv\Scripts\python.exe -m pytest tests/ -q`.
 
 ## Os módulos
 
 | Arquivo | Papel |
 |---|---|
-| `stats.py` | O **pedágio de 2 lentes**: PSR (Lente 1, closed-form, não-normalidade) + `block_bootstrap_ci` pareado (Lente 2, autocorrelação + cross-correlação). Mais `sharpe`/`sortino`/`max_drawdown`/`ci_mean`. |
+| `stats.py` | O **pedágio de 2 lentes**: PSR (Lente 1, closed-form, não-normalidade) + `block_bootstrap_ci` pareado (Lente 2, autocorrelação + cross-correlação). **`calibrated_ci`** = Lente 2 CALIBRADA (intervalo-t por blocos; cobertura medida 94-97% em AR(1), vs 85-93% liberal do percentil) — usar onde se AFIRMA significância. Mais `sharpe`/`sortino`/`max_drawdown`/`ci_mean` e quantis stdlib (`_normal_ppf`/`_t_ppf`). |
 | `infra.py` | SQLite isolado: `connect` (WAL + busy_timeout), `run_migrations` idempotente, `config_hash`. |
 | `net.py` | Rede unificada: download stdlib (COTAHIST) + camada async resiliente (httpx lazy + retry/transient para REST CoinGecko/SerpAPI/LLM). |
 | `obs.py` | Observabilidade + **telemetria JSONL** (`emit_event`, envelope rígido de 7 chaves; `read_events`). |
