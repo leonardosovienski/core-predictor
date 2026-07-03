@@ -8,6 +8,25 @@ MAJOR + shim de deprecação por ≥1 ciclo MINOR.
 Rumo à **v1.0.0** (plataforma pronta para produção) conforme
 `docs/DESIGN_V1.md` — implementação por ondas (0→5). **v1.0.0 alcançada na Onda 5.**
 
+## [1.0.1-ga-20260703] — guard de vazamento de segredos na telemetria
+
+Último item do checklist de plataforma sob controle do core. Agregado: **`5e88ab46d86ef432`**
+(33 arquivos; +`testing/secrets.py`). Suítes: core **129** · Copa **180** · cripto **171**(+2)
+· stocks **103**.
+
+### Adicionado
+- **`testing/secrets.py`**: `find_secrets(text, known_values)` (padrões de prefixo de
+  credencial conhecidos — sk-/AIza/ghp_/AKIA/Bearer/… — + match verbatim de valores reais
+  do ambiente) e `assert_no_secrets_in_events(path)` — transforma um segredo no `metadata`
+  do `emit_event` em falha de `pytest`, barrando o vazamento antes do commit.
+- Teste do core (controle positivo: pega credencial plantada, passa em texto limpo,
+  levanta em JSONL com segredo). 3 testes de domínio (`test_secrets_telemetry.py` em
+  cripto/stocks/Copa). Conftest da Copa passou a ligar `vendor/` no path dos testes.
+
+### Verificação
+- Scan da telemetria REAL: cripto (122KB) → **0 achados**, Copa (41KB) → **0 achados** —
+  sem vazamento acumulado e sem falso-positivo (o guard não é ruído).
+
 ## [1.0.0-ga-20260703] — Onda 5: reintegração do wc-predictor + v1.0.0
 
 Agregado do payload: **inalterado no conteúdo** (só o VERSION mudou → novo agregado no
