@@ -8,6 +8,36 @@ MAJOR + shim de deprecação por ≥1 ciclo MINOR.
 Rumo à **v1.0.0** (plataforma pronta para produção) conforme
 `docs/DESIGN_V1.md` — implementação por ondas (0→5). **v1.0.0 alcançada na Onda 5.**
 
+## [1.1.0-ga-20260709] — reconciliação do trials + PredictionPoint + trava de poder
+
+Meta-auditoria da plataforma (2026-07-09): o `measurement/trials.py` do core tinha
+ZERO consumidores enquanto o previsao-cripto evoluía uma cópia paralela — drift de
+governança dentro de casa. Reconciliado: a versão evoluída do cripto é agora a canônica.
+
+### Adicionado
+- **`validate_trials`** (schema formal) e **governança N+1** em `register_trial`:
+  mudar `params` de trial existente é `ValueError` (variação de configuração =
+  tentativa nova) — antes o update era silencioso. Campos opcionais tipados
+  (`features_used`, `train_period`, `test_period`). `TrialRegistry.validate()`.
+- **Trava de poder (harness ↔ registry)**: criar trial NOVA exige atestado de
+  controle positivo — arquivo irmão `<trials>.harness_attestation.json` emitido por
+  **`testing.harness.attest_pipeline_power`** (roda o controle e grava; reprovou →
+  não grava). Atualizar sharpe/notes de trial existente NÃO exige (maturação
+  automática não depende do harness na mesma máquina). Bypass explícito
+  `power_attestation=False` só para teste de mecânica. Novos símbolos:
+  `PowerAttestationMissingError`, `attestation_path_for`.
+- **`data.contracts.PredictionPoint`**: contrato do ciclo previsão→maturação→
+  resultado (`predicted_at`, `matures_at`, `value`, `metadata`, `is_mature`) — o
+  padrão implícito no bet_log do wc e no close_trial_sharpes do cripto. Invariante
+  `matures_at >= predicted_at` (lookahead barrado na construção).
+
+### Semântica endurecida (consumidores do símbolo antigo: zero — medido)
+- `register_trial` não aceita mais update silencioso de `params`.
+- `close_trial_sharpes` NÃO subiu: é lógica de domínio (estratos de Fonte, limiar
+  de score) — permanece no cripto, consumindo o `register_trial` canônico.
+
+Suíte do core: **129 → 145**.
+
 ## [1.0.1-ga-20260703] — guard de vazamento de segredos na telemetria
 
 Último item do checklist de plataforma sob controle do core. Agregado: **`5e88ab46d86ef432`**
