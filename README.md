@@ -17,8 +17,13 @@ Não há entrypoint. Não roda nada. É biblioteca de contratos.
 | `obs.py` | Observabilidade + **telemetria JSONL** (`emit_event`, envelope rígido de 7 chaves; `read_events`). |
 | `settings.py` | Trava P0 de credenciais (`require_secrets`): chave ausente/falsa/`<16` chars => crash imediato (pydantic + fallback stdlib). |
 | `replay.py` | Anti-lookahead ESTRUTURAL ("feed, don't query"): `replay`/`PastView` — acessar o futuro levanta `LookaheadError`. |
+| `measurement/trials.py` | **Experiment Registry** (reconciliado do previsao-cripto, v1.1.0): `validate_trials` (schema), `register_trial` com governança N+1 (mudar params = tentativa nova) e **trava de poder** — trial NOVA exige atestado do harness. + Deflated Sharpe Ratio. |
+| `testing/harness.py` | Controle positivo (edge plantado detectado + ruído rejeitado) e `attest_pipeline_power`, que emite o atestado exigido pelo registry. |
+| `data/contracts.py` | Envelopes da fronteira de dados (`MarketDataPoint`, `SignalPoint`) e **`PredictionPoint`** (v1.1.0) — o ciclo previsão→maturação→resultado com invariante anti-lookahead. |
 | `sync_core.py` | O **motor de distribuição** (tooling — não faz parte do payload; `--write` faz prune do que sai do core). |
 | `VERSION` | Carimbo da versão homologada. |
+
+Suíte do core: **145 testes** (v1.1.0-ga-20260709). Histórico de API: `CHANGELOG.md`.
 
 ## A regra de ouro: escrita UNIDIRECIONAL
 
