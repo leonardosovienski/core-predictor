@@ -8,6 +8,98 @@ MAJOR + shim de deprecação por ≥1 ciclo MINOR.
 Rumo à **v1.0.0** (plataforma pronta para produção) conforme
 `docs/DESIGN_V1.md` — implementação por ondas (0→5). **v1.0.0 alcançada na Onda 5.**
 
+## [1.3.0-ga-20260711] — estado definitivo: contratos, calibração, prequential, punição global
+
+Consolidação do masterplan "100% de maturidade arquitetural". A topologia física
+`src/` do design foi adiada (mover arquivos quebraria os imports dos 8 vendors —
+exigiria MAJOR); TODA a lógica nova entrou de forma aditiva no layout atual, e o
+pacote `contracts/` dá o caminho de import canônico novo via fachadas.
+
+### Adicionado
+- **`contracts/`** (Camada de Tipagem Pura): fachadas `contracts.points`
+  (MarketDataPoint, SignalPoint, PredictionPoint) e `contracts.registry`
+  (TrialRegistry, governança N+1) — mesmos objetos das implementações físicas
+  (`data/contracts.py`, `measurement/trials.py`), que permanecem onde os
+  vendors as importam.
+- **`kernel/timeindex.py`** (Onda 1): fronteira ISO/UTC canônica — `utcnow`,
+  `to_utc` (naive → `NaiveDatetimeError`, nunca adivinha fuso), `iso_z` (o
+  formato exato do trials.json), `parse_iso`.
+- **`kernel/jsonl_store.py`** (Onda 1): `JsonlStore` append-only com leitura
+  streaming, `count`/`tail`, corrupção explícita com número da linha, e
+  serialização validada ANTES da escrita (nunca deixa linha truncada).
+- **`kernel/net.py` — lazy curl_cffi** (Padrão A): `get_impersonating_session`
+  importa curl_cffi SÓ dentro da função — consumidores offline vendorizam o
+  módulo sem a dependência; erro de import diz o que instalar e por quê.
+- **`measurement/calibration.py`** (Onda 2, Padrão C): `PlattCalibrator`
+  (regressão logística 1D stdlib, fit determinístico, decorator matemático
+  puro — o core NÃO acopla ao PredictionPoint: LoL refutou, CS comprovou) e
+  `shin_devig` (remoção de margem por Shin 1993 via bisseção; corrige o
+  favourite-longshot bias que a normalização proporcional ignora; sem margem →
+  proporcional).
+- **`testing/prequential.py`** (Onda 2, Padrão B — Template Method):
+  `PrequentialEvaluator` (ABC) controla o fatiamento walk-forward; o consumidor
+  implementa `train_step`/`predict_step`. Anti-leakage POR CONSTRUÇÃO:
+  train recebe só o passado estrito, predict recebe as features SEM o
+  `target_key`. `min_history` e `retrain_every` para calendários distintos.
+- **Punição global (harness ↔ registry, métrica-aware)**:
+  `attest_pipeline_power(..., metric=...)` grava a métrica atestada;
+  `register_trial(..., metric=...)` exige que a trial nova declare a MESMA
+  métrica do atestado — mismatch levanta **`MetricMismatchError`**
+  (subclasse de `PowerAttestationMissingError`; omitir `metric` preserva o
+  comportamento v1.1.0). Um harness atestado com Brier não cobre vereditos RPS.
+- Re-exports novos no `__init__.py`: `PlattCalibrator`, `shin_devig`, `utcnow`,
+  `to_utc`, `iso_z`, `parse_iso`, `NaiveDatetimeError`, `JsonlStore`,
+  `PrequentialEvaluator`, `MetricMismatchError`.
+
+### Não mudou (Matriz de Responsabilidade)
+- O core segue sem emitir SQL — SQLite pertence ao consumidor.
+- `CircuitBreaker` já estava unificado em `data/circuit_breaker.py` (v1.0.0);
+  não foi duplicado em `kernel/net.py`.
+- Ledger permanece sem exclusão: correção = Posting de estorno (v1.2.0).
+
+Suíte do core: **169 → 200** (31 testes novos).
+
+## [1.2.0-ga-20260711] — Ledger + EloEngine + camada ordinal + telemetria de estresse
+
+Onda de agosto/2026 do masterplan de arquitetura preditiva: quatro componentes
+inspirados em repositórios abertos maduros, reimplementados stdlib-first (zero
+dependências novas) para manter o princípio de dependências mínimas do core.
+
+### Adicionado
+- **`measurement/ledger.py`** (inspirado em beancount): contabilidade de partidas
+  dobradas agnóstica de domínio. `Posting` (imutável), `Transaction` (grupo de
+  postings que soma zero — `UnbalancedTransactionError` se violar), `Ledger`
+  append-only (`post`, `balance`, `balances`, `history`). Unifica o padrão que
+  `bet_log` (wc-predictor) e `close_trial_sharpes` (previsao-cripto)
+  reimplementavam cada um a seu modo.
+- **`kernel/rating.py`** (inspirado em trueskill/Elo): motor de ratings
+  generalizado. `expected_score`/`update_pair` (Elo par-a-par clássico, delta
+  soma-zero) + `RatingBook` (estado com K-factor fixo ou dinâmico via callback,
+  `record_match` par-a-par e `record_ranking` para resultados multi-entidade —
+  corrida de F1, standings de LoL — decompostos em pares com K normalizado por
+  N-1). Não é TrueSkill bayesiano completo; é a abstração Entity/Context
+  suficiente para CS, LoL, F1 e NBA nativamente.
+- **`measurement/ordinal.py`** (inspirado em choix): camada Plackett-Luce.
+  `plackett_luce_prob` (probabilidade de um ranking completo dado forças
+  latentes), `fit_plackett_luce` (MLE via MM algorithm de Hunter 2004 — mesma
+  base do `choix.ilsr`), `rank_probabilities` (normalização de Luce). Insumo
+  direto para `measurement.metrics.rps` em domínios com resultado ranqueado
+  (F1, LoL) — RPS já existia (v1.1.0), esta é a camada de estimação de força
+  que faltava antes dele.
+- **`testing/stress.py`** (inspirado em Hypothesis): telemetria de estresse
+  property-based reimplementada em stdlib puro (sem adicionar `hypothesis`
+  como dependência). `floats`/`integers`/`lists_of` (estratégias) +
+  `check_property` (roda N amostras determinísticas por seed contra uma
+  propriedade, levanta `PropertyFailure` com o primeiro contraexemplo
+  reproduzível). Injeta casos extremos nas réguas do core além dos exemplos
+  fixos das suítes.
+- Re-exports no `__init__.py` da raiz: `Posting`/`Transaction`/`Ledger`/
+  `UnbalancedTransactionError`, `Entity`/`expected_score`/`update_pair`/
+  `RatingBook`, `plackett_luce_prob`/`fit_plackett_luce`/`rank_probabilities`,
+  `check_property`/`floats`/`integers`/`lists_of`/`PropertyFailure`.
+
+Suíte do core: **145 → 169** (24 testes novos: ledger, rating, ordinal, stress).
+
 ## [1.1.0-ga-20260709] — reconciliação do trials + PredictionPoint + trava de poder
 
 Meta-auditoria da plataforma (2026-07-09): o `measurement/trials.py` do core tinha

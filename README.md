@@ -20,10 +20,24 @@ Não há entrypoint. Não roda nada. É biblioteca de contratos.
 | `measurement/trials.py` | **Experiment Registry** (reconciliado do previsao-cripto, v1.1.0): `validate_trials` (schema), `register_trial` com governança N+1 (mudar params = tentativa nova) e **trava de poder** — trial NOVA exige atestado do harness. + Deflated Sharpe Ratio. |
 | `testing/harness.py` | Controle positivo (edge plantado detectado + ruído rejeitado) e `attest_pipeline_power`, que emite o atestado exigido pelo registry. |
 | `data/contracts.py` | Envelopes da fronteira de dados (`MarketDataPoint`, `SignalPoint`) e **`PredictionPoint`** (v1.1.0) — o ciclo previsão→maturação→resultado com invariante anti-lookahead. |
+| `measurement/ledger.py` | **Ledger generalizado** (beancount-like, v1.2.0): `Posting`/`Transaction` de partida dobrada (soma zero, imutável) + `Ledger` append-only com `balance`/`balances`/`history`. Unifica o padrão de `bet_log` e `close_trial_sharpes`. |
+| `kernel/rating.py` | **EloEngine unificado** (trueskill-like, v1.2.0): `expected_score`/`update_pair` (Elo par-a-par, soma-zero) + `RatingBook` (estado, K dinâmico, `record_ranking` para resultados multi-entidade — corridas, standings). |
+| `measurement/ordinal.py` | **Camada ordinal** (choix-like, v1.2.0): Plackett-Luce — `plackett_luce_prob`, `fit_plackett_luce` (MLE via MM algorithm de Hunter 2004), `rank_probabilities`. Insumo para `rps` em resultados ranqueados (F1, LoL). |
+| `testing/stress.py` | **Telemetria de estresse** (Hypothesis-like stdlib, v1.2.0): `check_property` roda uma propriedade contra amostras aleatórias determinísticas (`floats`/`integers`/`lists_of`), reportando o primeiro contraexemplo via `PropertyFailure`. |
+| `contracts/` | **Camada de Tipagem Pura** (v1.3.0): fachadas canônicas — `contracts.points` (envelopes) e `contracts.registry` (governança N+1). Mesmos objetos das implementações físicas; novo código importa daqui. |
+| `kernel/timeindex.py` | **Fronteira ISO/UTC** (v1.3.0): `utcnow`/`to_utc`/`iso_z`/`parse_iso`. Naive datetime cruzando fronteira = `NaiveDatetimeError` (nunca adivinha fuso). |
+| `kernel/jsonl_store.py` | **`JsonlStore`** (v1.3.0): eventos append-only com leitura streaming; corrupção explícita com nº da linha; sem update/delete (correção é registro novo). |
+| `measurement/calibration.py` | **Calibração** (v1.3.0): `PlattCalibrator` + `shin_devig` — decoradores matemáticos PUROS, chamados na última milha do consumidor (o core não força calibração no PredictionPoint: LoL refutou o Platt, CS comprovou). |
+| `testing/prequential.py` | **Walk-forward via Template Method** (v1.3.0): `PrequentialEvaluator` (ABC) — o core controla o fatiamento (anti-leakage por construção: train só vê o passado, predict não vê o target); o consumidor implementa `train_step`/`predict_step`. |
 | `sync_core.py` | O **motor de distribuição** (tooling — não faz parte do payload; `--write` faz prune do que sai do core). |
 | `VERSION` | Carimbo da versão homologada. |
 
-Suíte do core: **145 testes** (v1.1.0-ga-20260709). Histórico de API: `CHANGELOG.md`.
+Suíte do core: **200 testes** (v1.3.0). Histórico de API: `CHANGELOG.md`.
+
+**Punição global (v1.3.0)**: `attest_pipeline_power(..., metric="rps")` grava a métrica
+no atestado; `register_trial(..., metric="rps")` exige match — harness atestado com
+Brier não cobre veredito RPS (`MetricMismatchError`). `get_impersonating_session`
+(kernel/net) traz curl_cffi LAZY: só quem raspa HLTV/SofaScore precisa da dependência.
 
 ## A regra de ouro: escrita UNIDIRECIONAL
 
