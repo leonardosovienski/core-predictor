@@ -9,6 +9,12 @@ import json
 
 import sync_core
 
+# Auditoria hostil 2026-07-17 (rodada "tools/"): PARKED ficou vazio entre 2026-07-03
+# e esta correção — `--write` sem `--target` sincronizou os 3 projetos históricos
+# protegidos (wc-predictor-v2, predictor-stocks, nba-predictor) junto dos ativos.
+# Este teste fixa a garantia: os 3 nomes reais precisam estar em PARKED.
+_PROTEGIDOS = {"wc-predictor-v2", "predictor-stocks", "nba-predictor"}
+
 
 def _make_workspace(tmp_path):
     """Workspace mínimo: canônico com 1 módulo + VERSION, e 1 consumidor opt-in."""
@@ -214,3 +220,24 @@ def test_modo_direcionado_nao_importa_projeto_de_dominio(tmp_path, monkeypatch, 
     src = inspect.getsource(sync_core)
     assert "importlib" not in src
     assert "__import__" not in src
+
+
+def test_parked_contem_os_3_projetos_historicos_protegidos():
+    # Regressão (auditoria hostil 2026-07-17): PARKED vazio permitiu que
+    # --write sem --target escrevesse vendor/ nos 3 projetos que deveriam
+    # estar congelados. Fixa os nomes reais na constante.
+    assert sync_core.PARKED == {"wc-predictor-v2", "predictor-stocks", "nba-predictor"}
+
+
+def test_write_sem_target_pula_projetos_protegidos(tmp_path, monkeypatch, capsys):
+    canonical, vendor = _make_workspace(tmp_path)
+    _patch(monkeypatch, canonical)
+    protegido = tmp_path / "wc-predictor-v2" / "vendor" / "predictor_core"
+    protegido.mkdir(parents=True)
+    monkeypatch.setattr(sync_core, "PARKED", {"wc-predictor-v2"})
+    assert sync_core.cmd_write() == 0
+    out = capsys.readouterr().out
+    assert "wc-predictor-v2" in out and "PULADO" in out
+    assert not (protegido / "mod.py").exists()
+    assert not (protegido / sync_core.MANIFEST_NAME).exists()
+    assert (vendor / "mod.py").exists()

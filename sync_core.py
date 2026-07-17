@@ -46,9 +46,14 @@ _EXCLUDE_DIRS = {".git", ".github", "__pycache__", ".pytest_cache", ".claude",
 # Domínios congelados: o sync se RECUSA a escrever neles (dado irreproduzível em jogo).
 # Onda 5 (2026-07-03): wc-predictor DESPARKADO — a coleta (ingest→matches.db) é
 # independente da camada de análise; escrever vendor/ é aditivo e não toca o dado
-# congelado no SQLite nem o config pré-registrado. A maquinaria permanece para PARKs
-# futuros; hoje nenhum domínio está congelado.
-PARKED: set[str] = set()
+# congelado no SQLite nem o config pré-registrado.
+#
+# Auditoria hostil 2026-07-17 (rodada "tools/"): PARKED vazio deixou `--write` sem
+# `--target` sincronizar TODOS os consumidores com vendor/predictor_core/, inclusive
+# os 3 projetos históricos/protegidos (wc-predictor-v2, predictor-stocks,
+# nba-predictor) — nenhum deles deveria receber commits automáticos de vendor.
+# Repovoado para restaurar a garantia original de congelamento.
+PARKED: set[str] = {"wc-predictor-v2", "predictor-stocks", "nba-predictor"}
 
 
 def _is_parked(name: str) -> bool:
