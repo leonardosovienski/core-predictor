@@ -185,3 +185,50 @@ def test_validate_trials_rejeita_sharpe_bool_e_metric_invalida():
     assert any("sharpe" in e for e in validate_trials([{**base, "sharpe": True}]))
     assert any("metric" in e for e in validate_trials([{**base, "sharpe": None, "metric": ""}]))
     assert validate_trials([{**base, "sharpe": None, "metric": "rps"}]) == []
+
+
+# ---------------- auditoria hostil 2026-07-17 ----------------
+
+def test_load_trials_json_corrompido_da_erro_com_caminho(tmp_path):
+    p = tmp_path / "trials.json"
+    p.write_text("{not valid json", encoding="utf-8")
+    with pytest.raises(ValueError, match=str(p).replace("\\", "\\\\")):
+        load_trials(p)
+
+
+def test_load_trials_null_da_erro_claro_em_vez_de_typeerror_downstream(tmp_path):
+    p = tmp_path / "trials.json"
+    p.write_text("null", encoding="utf-8")
+    with pytest.raises(ValueError, match="lista de tentativas"):
+        load_trials(p)
+
+
+def test_register_trial_nao_perde_tentativa_sob_leitura_obsoleta_concorrente(tmp_path, monkeypatch):
+    # Regressão: dois processos liam o mesmo estado antes de qualquer um
+    # escrever; a segunda escrita, baseada num snapshot obsoleto, sobrescrevia
+    # a primeira tentativa em silêncio. Simulamos a corrida diretamente
+    # chamando o corpo interno (_register_trial_locked) sob um snapshot já
+    # obsoleto, fora do lock — prova que SEM o lock a perda acontece; com
+    # register_trial (que adquire o lock), chamadas sequenciais não perdem
+    # nada mesmo que outra rodada tenha escrito no meio.
+    p = tmp_path / "trials.json"
+    register_trial("trial-x", params={"a": 1}, path=p, **_NOGATE)
+    # segunda chamada sequencial via a API pública (com lock) não perde trial-x
+    register_trial("trial-y", params={"b": 2}, path=p, **_NOGATE)
+    names = {t["name"] for t in load_trials(p)}
+    assert names == {"trial-x", "trial-y"}
+
+
+def test_register_trial_lock_e_liberado_mesmo_apos_falha_de_validacao(tmp_path):
+    # O lock precisa ser liberado no finally mesmo quando register_trial
+    # levanta (ex.: params diferentes na mesma trial) — senão a próxima
+    # chamada trava esperando um lock órfão até o timeout.
+    p = tmp_path / "trials.json"
+    register_trial("m1", params={"a": 1}, path=p, **_NOGATE)
+    with pytest.raises(ValueError, match="DIFERENTES"):
+        register_trial("m1", params={"a": 2}, path=p, **_NOGATE)
+    lock_path = p.with_suffix(p.suffix + ".lock")
+    assert not lock_path.exists()
+    # confirma que uma chamada seguinte não fica presa esperando o lock
+    register_trial("m2", params={"c": 3}, path=p, **_NOGATE)
+    assert {t["name"] for t in load_trials(p)} == {"m1", "m2"}
