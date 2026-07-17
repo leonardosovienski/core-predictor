@@ -32,3 +32,28 @@ def test_maturacao_instantanea_permitida():
     """matures_at == predicted_at é válido (resultado observável na emissão)."""
     pp = PredictionPoint(predicted_at=_T0, matures_at=_T0, value=1)
     assert pp.is_mature(_T0)
+
+
+def test_metadata_mutada_apos_construcao_nao_vaza_para_o_objeto():
+    # Regressão (auditoria hostil 2026-07-17): frozen=True só impede REBIND;
+    # o dict passado em metadata continuava sendo a MESMA referência, então
+    # mutá-lo depois da construção alterava o PredictionPoint "imutável" já
+    # em uso por outro código.
+    meta = {"asset": "BTCUSDT"}
+    pp = PredictionPoint(predicted_at=_T0, matures_at=_T0, value=1, metadata=meta)
+    meta["asset"] = "ETHUSDT"
+    meta["future_price"] = 99999
+    assert pp.metadata["asset"] == "BTCUSDT"
+    assert "future_price" not in pp.metadata
+
+
+def test_value_lista_mutada_apos_construcao_nao_vaza_para_o_objeto():
+    valor = [1, 2, 3]
+    pp = PredictionPoint(predicted_at=_T0, matures_at=_T0, value=valor)
+    valor.append(999)
+    assert pp.value == [1, 2, 3]
+
+
+def test_value_escalar_nao_e_afetado_pela_copia_defensiva():
+    pp = PredictionPoint(predicted_at=_T0, matures_at=_T0, value=0.73)
+    assert pp.value == 0.73
