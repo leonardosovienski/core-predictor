@@ -56,3 +56,24 @@ def test_read_events_reports_line_context_on_truncated_jsonl(tmp_path):
         '{"a": 1}\n{"a": 2}\n{"a": 3, "trunc', encoding="utf-8")
     with pytest.raises(ValueError, match=r"events\.jsonl:3"):
         obs.read_events(p)
+
+
+def test_emit_event_rejeita_timestamp_garbage(tmp_path):
+    with pytest.raises(ValueError):
+        obs.emit_event("d", "e", timestamp="not-a-timestamp-at-all", path=tmp_path / "e.jsonl")
+
+
+def test_emit_event_rejeita_timestamp_naive(tmp_path):
+    # Regressão: datetime naive serializado (sem tzinfo) era gravado como
+    # está — apesar de kernel/timeindex.py existir exatamente para nunca
+    # deixar o core adivinhar fuso.
+    with pytest.raises(ValueError):
+        obs.emit_event("d", "e", timestamp="2026-06-29T00:00:00", path=tmp_path / "e.jsonl")
+
+
+def test_emit_event_aceita_timestamp_com_offset_nao_utc(tmp_path):
+    # Timestamp com offset explícito (não-naive) deve ser aceito mesmo que
+    # não seja UTC — parse_iso normaliza, não exige UTC de entrada.
+    rec = obs.emit_event("d", "e", timestamp="2026-06-29T00:00:00-03:00",
+                         path=tmp_path / "e.jsonl")
+    assert rec["timestamp"] == "2026-06-29T00:00:00-03:00"
