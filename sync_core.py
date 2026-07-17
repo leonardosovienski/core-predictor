@@ -13,6 +13,8 @@ o sync, e a correção propaga com integridade garantida — matando o "drift".
 Uso (de qualquer diretório):
     py -3.14 sync_core.py --check     # relata o drift de cada consumidor (NÃO escreve)
     py -3.14 sync_core.py --write     # propaga o núcleo p/ os vendors (grava manifest)
+    py -3.14 sync_core.py --write --target f1-predictor  # restringe a UM consumidor
+    (--target aceita só o nome exato do diretório; sem ele, opera em todos como antes)
 
 Payload distribuído = todos os *.py do pacote (recursivo) + VERSION. NÃO fazem parte
 do payload (canônico-only): sync_core.py, CORE_MANIFEST.json, README.md, CHANGELOG.md,
@@ -110,10 +112,28 @@ def _diff_files(canon_files: dict, vendor_files: dict) -> list:
     return out
 
 
-def cmd_check() -> int:
+def _select_consumers(target: str | None) -> list[Path] | None:
+    """Filtra consumers() por nome exato de diretório quando `target` é dado.
+
+    Retorna None (sem escrever nada) se `target` não casar com nenhum
+    consumidor conhecido — correspondência parcial/ambígua nunca é aceita."""
+    found = consumers()
+    if target is None:
+        return found
+    matches = [d for d in found if d.name == target]
+    if not matches:
+        names = ", ".join(d.name for d in found) or "(nenhum)"
+        print(f"erro: consumidor '{target}' não encontrado. Conhecidos: {names}")
+        return None
+    return matches
+
+
+def cmd_check(target: str | None = None) -> int:
     canon = manifest(CANONICAL)
     print(f"canônico predictor_core/ — agregado {canon['aggregate']} ({len(canon['files'])} arquivos)")
-    found = consumers()
+    found = _select_consumers(target)
+    if found is None:
+        return 2
     if not found:
         print("  (nenhum consumidor com vendor/predictor_core/ ainda)")
         return 0
@@ -173,14 +193,17 @@ def _prune_tree(vendor: Path, payload_rel: set) -> None:
             pass
 
 
-def cmd_write() -> int:
+def cmd_write(target: str | None = None) -> int:
     canon = manifest(CANONICAL)
+    selected = _select_consumers(target)
+    if selected is None:
+        return 2
     files = payload_files(CANONICAL)
     payload_rel = {f.relative_to(CANONICAL).as_posix() for f in files}
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     source_version = (CANONICAL / "VERSION").read_text(encoding="utf-8").strip().split("\n")[0]
     wrote = 0
-    for d in consumers():
+    for d in selected:
         if _is_parked(d.name):
             print(f"  {d.name:<20} PULADO (PARKED — não se escreve em domínio congelado)")
             continue
@@ -212,8 +235,11 @@ def main() -> int:
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--check", action="store_true", help="relata drift, não escreve")
     g.add_argument("--write", action="store_true", help="propaga o núcleo para os vendors")
+    ap.add_argument("--target", metavar="CONSUMER", default=None,
+                    help="restringe --check/--write a um único consumidor "
+                         "(nome exato de diretório; sem isso, opera em todos)")
     args = ap.parse_args()
-    return cmd_check() if args.check else cmd_write()
+    return cmd_check(args.target) if args.check else cmd_write(args.target)
 
 
 if __name__ == "__main__":
