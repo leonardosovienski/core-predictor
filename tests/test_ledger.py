@@ -51,3 +51,22 @@ def test_ledger_history_filters_by_account():
 def test_posting_rejects_nonfinite_amount():
     with pytest.raises(ValueError):
         Posting("a", float("nan"))
+
+
+def test_transacao_grande_legitimamente_balanceada_e_aceita():
+    """Regressão: tolerância absoluta 1e-9 reprovava soma matematicamente zero
+    em magnitude 1e15 (resíduo float ~0.025)."""
+    led = Ledger()
+    led.post(datetime(2026, 1, 1, tzinfo=timezone.utc),
+             [Posting("a", 1e15 + 0.1), Posting("b", -1e15), Posting("c", -0.1)])
+    assert len(led.transactions) == 1
+
+
+def test_erro_de_digitacao_continua_barrado_em_qualquer_escala():
+    led = Ledger()
+    with pytest.raises(UnbalancedTransactionError):
+        led.post(datetime(2026, 1, 1, tzinfo=timezone.utc),
+                 [Posting("a", 100.0), Posting("b", -100.01)])
+    with pytest.raises(UnbalancedTransactionError):
+        led.post(datetime(2026, 1, 1, tzinfo=timezone.utc),
+                 [Posting("a", 1e15), Posting("b", -1e15 + 5000.0)])

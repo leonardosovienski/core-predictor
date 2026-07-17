@@ -96,6 +96,20 @@ def consumers() -> list[Path]:
     return out
 
 
+def _diff_files(canon_files: dict, vendor_files: dict) -> list:
+    """Divergências arquivo a arquivo (relatório do drift): faltantes no vendor,
+    órfãos no vendor e conteúdo modificado."""
+    out = []
+    for rel in sorted(canon_files.keys() | vendor_files.keys()):
+        if rel not in vendor_files:
+            out.append(f"faltando: {rel}")
+        elif rel not in canon_files:
+            out.append(f"orfao:    {rel}")
+        elif vendor_files[rel] != canon_files[rel]:
+            out.append(f"difere:   {rel}")
+    return out
+
+
 def cmd_check() -> int:
     canon = manifest(CANONICAL)
     print(f"canônico predictor_core/ — agregado {canon['aggregate']} ({len(canon['files'])} arquivos)")
@@ -105,23 +119,35 @@ def cmd_check() -> int:
         return 0
     drift = 0
     for d in found:
-        mpath = d / "vendor" / "predictor_core" / MANIFEST_NAME
+        vendor = d / "vendor" / "predictor_core"
+        mpath = vendor / MANIFEST_NAME
         parked = _is_parked(d.name)
         flag = "  [PARKED]" if parked else ""
+        # A verificação re-HASHEIA os bytes reais do vendor — confiar no agregado
+        # gravado no manifest não detectaria adulteração pós-sync (editar um .py do
+        # vendor sem tocar no CORE_MANIFEST.json passaria como "em sincronia").
+        actual = manifest(vendor)
+        stored = (json.loads(mpath.read_text(encoding="utf-8")).get("aggregate")
+                  if mpath.exists() else None)
         # Domínio PARKED está deliberadamente congelado: drift nele é ESPERADO e
         # informativo, não falha (não conta no exit code). Só drift em consumidor
         # ATIVO reprova o --check.
-        if not mpath.exists():
-            print(f"  {d.name:<20} sem manifest (vendoring legado) — rode --write{flag}")
-            drift += 0 if parked else 1
+        if actual["aggregate"] == canon["aggregate"]:
+            if stored is None:
+                print(f"  {d.name:<20} OK (conteúdo em sincronia; sem manifest — rode --write){flag}")
+            else:
+                print(f"  {d.name:<20} OK (em sincronia){flag}")
             continue
-        agg = json.loads(mpath.read_text(encoding="utf-8")).get("aggregate")
-        if agg == canon["aggregate"]:
-            print(f"  {d.name:<20} OK (em sincronia){flag}")
+        # ASCII puro: o console cp1252 do Windows não encoda '≠'/'→' e quebraria aqui.
+        if stored == canon["aggregate"]:
+            # manifest jura sincronia, mas os bytes divergem: alguém editou o vendor
+            # DEPOIS do sync — exatamente o cenário que esta salvaguarda existe p/ pegar.
+            print(f"  {d.name:<20} ADULTERADO (manifest={stored} mas conteudo={actual['aggregate']}){flag}")
         else:
-            # ASCII puro: o console cp1252 do Windows não encoda '≠'/'→' e quebraria aqui.
-            print(f"  {d.name:<20} DRIFT (vendor={agg} != canonico={canon['aggregate']}){flag}")
-            drift += 0 if parked else 1
+            print(f"  {d.name:<20} DRIFT (vendor={actual['aggregate']} != canonico={canon['aggregate']}) — rode --write{flag}")
+        for line in _diff_files(canon["files"], actual["files"])[:10]:
+            print(f"      {line}")
+        drift += 0 if parked else 1
     return 1 if drift else 0
 
 

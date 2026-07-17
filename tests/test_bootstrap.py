@@ -80,3 +80,9 @@ def test_cluster_singleton_brackets_mean():
                              scheme="cluster", cluster_key=lambda x: x[1],
                              n_boot=2000, seed=5)
     assert lo < sum(data) / len(data) < hi
+
+
+def test_bootstrap_ci_serie_vazia_e_valueerror_explicito():
+    """Regressão: série vazia vazava ZeroDivisionError de dentro da statistic."""
+    with pytest.raises(ValueError, match="vazia"):
+        bootstrap_ci([], lambda u: sum(u) / len(u), scheme="iid")

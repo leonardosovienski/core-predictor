@@ -29,3 +29,18 @@ def test_emit_event_requires_domain_and_event(tmp_path):
 
 def test_read_events_missing_file_is_empty(tmp_path):
     assert obs.read_events(tmp_path / "nao_existe.jsonl") == []
+
+
+def test_emit_event_rejeita_metric_nao_finita(tmp_path):
+    """Regressão: NaN em metrics era serializado como literal fora do RFC 8259 —
+    a linha inteira da telemetria virava lixo para parsers estritos."""
+    with pytest.raises(ValueError, match="não-finito"):
+        obs.emit_event("d", "e", metrics={"psr": float("nan")}, path=tmp_path / "e.jsonl")
+    with pytest.raises(ValueError):
+        obs.emit_event("d", "e", metrics={"x": float("inf")}, path=tmp_path / "e.jsonl")
+    assert not (tmp_path / "e.jsonl").exists()  # nada gravado
+
+
+def test_emit_event_rejeita_nan_escondido_no_metadata(tmp_path):
+    with pytest.raises(ValueError):
+        obs.emit_event("d", "e", metadata={"raw": float("nan")}, path=tmp_path / "e.jsonl")

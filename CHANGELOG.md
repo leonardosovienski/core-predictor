@@ -8,6 +8,52 @@ MAJOR + shim de deprecação por ≥1 ciclo MINOR.
 Rumo à **v1.0.0** (plataforma pronta para produção) conforme
 `docs/DESIGN_V1.md` — implementação por ondas (0→5). **v1.0.0 alcançada na Onda 5.**
 
+## [1.3.1-ga-20260716] — auditoria adversarial: 6 bugs + 6 gaps de contrato corrigidos
+
+Caçada adversarial sobre todos os módulos (sondas executadas, não só leitura).
+Nenhuma API removida; correções de comportamento e de contrato, todas aditivas
+ou de semântica prometida-mas-não-cumprida.
+
+### Corrigido (comportamento)
+- **`kernel/rating.py` — `record_ranking` × `k_factor`**: a escala K/(N-1) agora
+  embrulha também o callback `k_factor` (antes era silenciosamente ignorada — uma
+  corrida de N entidades movia o rating N-1× mais com K dinâmico do que com K fixo).
+- **`testing/stress.py` — `PropertyFailure`**: a amostra reprodutora mudou de
+  `self.args` (atributo especial de `BaseException`, que era sobrescrito e apagava
+  a mensagem do `str(exc)`) para **`self.failing_args`**. Diagnóstico restaurado.
+- **`measurement/ordinal.py` — `fit_plackett_luce`**: piso `1e-12` (pós-normalização)
+  nas forças — item que nunca vence recebia `w=0.0` e `plackett_luce_prob` rejeitava
+  a saída do próprio fit (contrato `w>0` violado).
+- **`measurement/trials.py` — governança de `metric` em UPDATE**: trocar a métrica
+  de trial existente agora é `ValueError` (mesma regra N+1 dos params); update sem
+  `metric` preserva a registrada (antes era apagada em silêncio).
+- **`kernel/obs.py` + `kernel/jsonl_store.py` — NaN/inf barrados**: `emit_event`
+  valida finitude de `metrics` e serializa com `allow_nan=False` ANTES de abrir o
+  arquivo (NaN no metadata não cria mais arquivo vazio); `JsonlStore.append` idem —
+  nenhuma linha fora do RFC 8259 entra no JSONL.
+- **`measurement/ledger.py` — tolerância relativa**: `max(1e-9, 1e-12·Σ|amounts|)` —
+  transação de magnitude 1e15 legitimamente balanceada não é mais reprovada por
+  resíduo float; erro de digitação continua barrado em qualquer escala.
+
+### Corrigido (contrato/semântica)
+- **`sync_core.py --check` re-hasheia os BYTES dos vendors**: adulteração pós-sync
+  (editar vendor sem tocar o manifest) agora aparece como **ADULTERADO** com diff
+  por arquivo; vendor de versão antiga aparece como DRIFT (antes o check confiava
+  no agregado gravado no próprio manifest do vendor — adulteração era invisível).
+- **`data/circuit_breaker.py`**: HALF_OPEN libera UMA sonda por vez (como a doc
+  sempre prometeu); `record_success`/`record_failure` resolvem a sonda em voo.
+- **`measurement/replay.py` — `PastView[-n]` além do início** → `IndexError`
+  (passado inexistente não é lookahead; `LookaheadError` fica reservado ao futuro).
+- **`measurement/bootstrap.py`**: série vazia → `ValueError` explícito (antes
+  vazava `ZeroDivisionError` de dentro da `statistic` do consumidor).
+- **`measurement/trials.py` — schema**: `sharpe` bool rejeitado; `metric` validada
+  (str não-vazia quando presente); **escrita atômica** do trials.json (tmp+replace).
+- **`testing/harness.py`**: docstring/mensagem honestas sobre `null_verdict`
+  (qualquer veredito ≠ edge conta como rejeição). `kernel/infra.py`: documentado o
+  gotcha do `executescript` (commit implícito → migração parcial em falha no meio).
+
+Suíte: 200 → **221 testes** (16 de regressão, um por achado, + 5 do sync_core).
+
 ## [1.3.0-ga-20260711] — estado definitivo: contratos, calibração, prequential, punição global
 
 Consolidação do masterplan "100% de maturidade arquitetural". A topologia física

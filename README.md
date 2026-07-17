@@ -32,7 +32,7 @@ Não há entrypoint. Não roda nada. É biblioteca de contratos.
 | `sync_core.py` | O **motor de distribuição** (tooling — não faz parte do payload; `--write` faz prune do que sai do core). |
 | `VERSION` | Carimbo da versão homologada. |
 
-Suíte do core: **200 testes** (v1.3.0). Histórico de API: `CHANGELOG.md`.
+Suíte do core: **221 testes** (v1.3.1). Histórico de API: `CHANGELOG.md`.
 
 **Punição global (v1.3.0)**: `attest_pipeline_power(..., metric="rps")` grava a métrica
 no atestado; `register_trial(..., metric="rps")` exige match — harness atestado com
@@ -59,9 +59,11 @@ py -3.12 sync_core.py --write     # propaga o núcleo para os vendors (grava COR
 ```
 
 `--write` grava em cada vendor um `CORE_MANIFEST.json` (hash por arquivo + agregado +
-timestamp + VERSION de origem). O `--check` confere esse agregado contra o canônico —
-qualquer adulteração de um vendor (alguém "consertou" a matemática dentro de um
-domínio para mascarar um resultado) aparece como **DRIFT**.
+timestamp + VERSION de origem). O `--check` **re-hasheia os bytes reais** de cada
+vendor e compara arquivo a arquivo contra o canônico — qualquer adulteração de um
+vendor (alguém "consertou" a matemática dentro de um domínio para mascarar um
+resultado) aparece como **ADULTERADO** (manifest jura sincronia, bytes divergem);
+vendor de versão antiga aparece como **DRIFT**.
 
 ## Salvaguardas
 

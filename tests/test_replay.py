@@ -44,3 +44,21 @@ def test_replay_key_accepts_monotonic():
     events = [("2024-01-01", 1), ("2024-01-02", 2), ("2024-01-03", 3)]
     ledger = replay.replay(events, lambda p: p.latest[1], key=lambda e: e[0])
     assert ledger == [1, 2, 3]
+
+
+def test_pastview_negativo_alem_do_inicio_e_indexerror_nao_lookahead():
+    """Regressão: past[-10] com 3 eventos levantava LookaheadError — acesso a
+    passado inexistente não é lookahead; o diagnóstico do erro capital ficava poluído."""
+    capturado = {}
+
+    def handler(past):
+        if past.asof_index == 2:
+            with pytest.raises(IndexError):
+                past[-10]
+            with pytest.raises(replay.LookaheadError):
+                past[4]
+            capturado["ok"] = True
+        return None
+
+    replay.replay([(i, i) for i in range(5)], handler, key=lambda e: e[0])
+    assert capturado.get("ok")

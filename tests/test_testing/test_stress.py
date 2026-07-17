@@ -25,7 +25,19 @@ def test_check_property_deterministic_by_seed():
         check_property(flaky, integers(0, 20), trials=200, seed=42)
     with pytest.raises(PropertyFailure) as e2:
         check_property(flaky, integers(0, 20), trials=200, seed=42)
-    assert e1.value.args == e2.value.args
+    assert e1.value.failing_args == e2.value.failing_args == (7,)
+
+
+def test_property_failure_preserva_mensagem_e_amostra():
+    """Regressão: self.args sobrescrevia BaseException.args e str(exc) virava a
+    amostra crua — o diagnóstico ('trial i/n: ... retornou False') sumia."""
+    def always_positive(x):
+        return x > 0
+    with pytest.raises(PropertyFailure) as e:
+        check_property(always_positive, integers(-10, -1), trials=5, seed=1)
+    assert "retornou False" in str(e.value)          # mensagem intacta
+    assert isinstance(e.value.failing_args, tuple)    # amostra reproduzível
+    assert always_positive(*e.value.failing_args) is False
 
 
 def test_check_property_catches_exception():

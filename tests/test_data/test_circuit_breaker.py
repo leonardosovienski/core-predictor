@@ -60,3 +60,23 @@ def test_relogio_injetavel_controla_timeout():
     now[0] += 31.0
     assert cb.allow() is True                 # passou o timeout → HALF_OPEN
     assert cb.state == CircuitBreaker.HALF_OPEN
+
+
+def test_half_open_libera_uma_sonda_por_vez():
+    """Regressão: HALF_OPEN liberava sondas ilimitadas — N chamadas concorrentes
+    bombardeariam a fonte convalescente de uma vez."""
+    now = [0.0]
+    cb = CircuitBreaker("t", failure_threshold=1, reset_timeout=10.0, clock=lambda: now[0])
+    cb.record_failure()
+    now[0] = 11.0
+    assert cb.can_attempt() is True     # a sonda
+    assert cb.can_attempt() is False    # em voo: bloqueia
+    assert cb.can_attempt() is False
+    cb.record_failure()                 # sonda falhou → reabre
+    assert cb.state == CircuitBreaker.OPEN
+    now[0] = 22.0
+    assert cb.can_attempt() is True     # novo ciclo, nova sonda única
+    assert cb.can_attempt() is False
+    cb.record_success()                 # sonda passou → fecha e destrava
+    assert cb.state == CircuitBreaker.CLOSED
+    assert cb.can_attempt() is True and cb.can_attempt() is True

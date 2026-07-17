@@ -44,3 +44,21 @@ def test_rating_book_record_ranking_requires_two():
     book = RatingBook()
     with pytest.raises(ValueError):
         book.record_ranking(["solo"])
+
+
+def test_record_ranking_k_factor_recebe_a_mesma_escala():
+    """Regressão: k_factor ignorava a divisão K/(N-1) — corrida de N movia o
+    rating N-1x mais com callback do que com K fixo equivalente."""
+    fixo = RatingBook(k=32.0)
+    fixo.record_ranking(["a", "b", "c", "d", "e"])
+    dinamico = RatingBook(k=32.0, k_factor=lambda e: 32.0)
+    dinamico.record_ranking(["a", "b", "c", "d", "e"])
+    assert dinamico.rating("a") == pytest.approx(fixo.rating("a"))
+    assert dinamico.rating("e") == pytest.approx(fixo.rating("e"))
+
+
+def test_record_ranking_restaura_k_factor_apos_rodar():
+    cb = lambda e: 40.0
+    book = RatingBook(k=32.0, k_factor=cb)
+    book.record_ranking(["a", "b"])
+    assert book.k_factor is cb and book.k == 32.0

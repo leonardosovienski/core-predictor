@@ -33,3 +33,12 @@ def test_fit_plackett_luce_recovers_dominant_item():
 def test_fit_plackett_luce_requires_two_items():
     with pytest.raises(ValueError):
         fit_plackett_luce([["only"]])
+
+
+def test_fit_plackett_luce_nunca_vencedor_mantem_contrato_w_positivo():
+    """Regressão: item sempre-último recebia força 0.0 e plackett_luce_prob
+    rejeitava a saída do próprio fit (contrato w>0 violado)."""
+    w = fit_plackett_luce([["a", "b", "z"], ["b", "a", "z"], ["a", "b", "z"]])
+    assert all(v > 0 for v in w.values())
+    assert w["z"] < w["a"] and w["z"] < w["b"]
+    assert plackett_luce_prob(["a", "b", "z"], w) > 0  # aceita a própria saída

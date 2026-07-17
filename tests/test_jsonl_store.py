@@ -36,3 +36,10 @@ def test_unserializable_record_fails_before_write(tmp_path):
     with pytest.raises(TypeError):
         store.append({"bad": object()})
     assert not store.path.exists()
+
+
+def test_append_rejeita_nan_antes_de_abrir_o_arquivo(tmp_path):
+    store = JsonlStore(tmp_path / "s.jsonl")
+    with pytest.raises(ValueError):
+        store.append({"x": float("nan")})
+    assert not (tmp_path / "s.jsonl").exists()

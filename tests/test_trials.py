@@ -151,3 +151,37 @@ def test_registry_facade_deflates_by_registered_trials(tmp_path):
     out = reg.deflated_sharpe(_RETURNS)
     assert out["n_trials"] == 5 and 0.0 <= out["dsr"] <= 1.0
     assert reg.validate() == []
+
+
+# --- governança de metric em UPDATE (regressão v1.3.1) -----------------------
+
+def test_update_nao_pode_trocar_metric(tmp_path):
+    """Regressão: a trava MetricMismatchError só valia para trial NOVA — um update
+    com os mesmos params trocava a régua do veredito em silêncio."""
+    p = tmp_path / "trials.json"
+    register_trial("m1", params={"lr": 0.1}, path=p, metric="brier", **_NOGATE)
+    with pytest.raises(ValueError, match="outra régua"):
+        register_trial("m1", params={"lr": 0.1}, path=p, metric="rps", **_NOGATE)
+
+
+def test_update_sem_metric_preserva_a_registrada(tmp_path):
+    """Regressão: update sem `metric` apagava o campo silenciosamente."""
+    p = tmp_path / "trials.json"
+    register_trial("m1", params={"lr": 0.1}, path=p, metric="brier", **_NOGATE)
+    out = register_trial("m1", params={"lr": 0.1}, sharpe=0.2, path=p, **_NOGATE)
+    assert out[0]["metric"] == "brier"
+
+
+def test_update_pode_enriquecer_trial_sem_metric(tmp_path):
+    p = tmp_path / "trials.json"
+    register_trial("m1", params={"lr": 0.1}, path=p, **_NOGATE)
+    out = register_trial("m1", params={"lr": 0.1}, path=p, metric="brier", **_NOGATE)
+    assert out[0]["metric"] == "brier"
+
+
+def test_validate_trials_rejeita_sharpe_bool_e_metric_invalida():
+    base = {"name": "x", "registered_at": "2026-01-01T00:00:00Z",
+            "params": {"a": 1}, "notes": ""}
+    assert any("sharpe" in e for e in validate_trials([{**base, "sharpe": True}]))
+    assert any("metric" in e for e in validate_trials([{**base, "sharpe": None, "metric": ""}]))
+    assert validate_trials([{**base, "sharpe": None, "metric": "rps"}]) == []
