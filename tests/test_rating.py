@@ -62,3 +62,13 @@ def test_record_ranking_restaura_k_factor_apos_rodar():
     book = RatingBook(k=32.0, k_factor=cb)
     book.record_ranking(["a", "b"])
     assert book.k_factor is cb and book.k == 32.0
+
+
+def test_record_ranking_rejeita_nome_duplicado():
+    # Regressão (auditoria hostil 2026-07-17): nome repetido gerava um
+    # confronto "entidade contra si mesma" (mesmo objeto de estado nos dois
+    # lados), inflando games e descontando o rating do adversário comum duas
+    # vezes contra a mesma pessoa, sem nenhum erro.
+    book = RatingBook()
+    with pytest.raises(ValueError, match="únicos"):
+        book.record_ranking(["alice", "alice", "bob"])
