@@ -44,3 +44,15 @@ def test_emit_event_rejeita_metric_nao_finita(tmp_path):
 def test_emit_event_rejeita_nan_escondido_no_metadata(tmp_path):
     with pytest.raises(ValueError):
         obs.emit_event("d", "e", metadata={"raw": float("nan")}, path=tmp_path / "e.jsonl")
+
+
+def test_read_events_reports_line_context_on_truncated_jsonl(tmp_path):
+    # Regressão: uma linha truncada no fim do arquivo (crash a meio da escrita)
+    # derrubava a leitura inteira com um json.JSONDecodeError cru, sem dizer
+    # qual arquivo/linha — mesma filosofia de kernel.jsonl_store.JsonlStore
+    # (falha barulhenta, mas com contexto acionável).
+    p = tmp_path / "events.jsonl"
+    p.write_text(
+        '{"a": 1}\n{"a": 2}\n{"a": 3, "trunc', encoding="utf-8")
+    with pytest.raises(ValueError, match=r"events\.jsonl:3"):
+        obs.read_events(p)
