@@ -38,3 +38,30 @@ def test_adjusted_closes_rejects_nonpositive_factor():
 def test_overnight_returns_skips_nonpositive_prev():
     out = overnight_returns(["a", "b", "c"], [0.0, 10.0, 11.0])
     assert [d for d, _ in out] == ["c"]         # b pulado (prev=0)
+
+
+def test_overnight_returns_com_close_anterior_nan_produz_ret_nan_em_vez_de_omitir():
+    # Regressão (auditoria hostil 2026-07-17): `closes[i-1] > 0` é sempre False
+    # para NaN em Python — o par inteiro desaparecia da série de retornos, como
+    # se faltasse um candle em vez de haver um candle corrompido.
+    import math
+    dates = ["d0", "d1", "d2"]
+    closes = [100.0, float("nan"), 105.0]
+    rets = overnight_returns(dates, closes)
+    assert len(rets) == 2
+    assert rets[0][0] == "d1" and math.isnan(rets[0][1])
+
+
+def test_detect_jumps_sempre_reporta_nan_independente_do_threshold():
+    import math
+    dates = ["d0", "d1", "d2"]
+    closes = [100.0, float("nan"), 102.0]
+    jumps = detect_jumps(dates, closes, threshold=0.99)  # threshold alto, não pegaria por magnitude
+    assert any(d == "d1" and math.isnan(r) for d, r in jumps)
+
+
+def test_detect_jumps_serie_normal_sem_nan_nao_regride():
+    # Guarda de não-regressão: série limpa continua sem falsos positivos.
+    dates = ["d0", "d1", "d2"]
+    closes = [100.0, 100.5, 101.0]
+    assert detect_jumps(dates, closes, threshold=0.30) == []
