@@ -32,7 +32,10 @@ Não há entrypoint. Não roda nada. É biblioteca de contratos.
 | `sync_core.py` | O **motor de distribuição** (tooling — não faz parte do payload; `--write` faz prune do que sai do core). |
 | `VERSION` | Carimbo da versão homologada. |
 
-Suíte do core: **221 testes** (v1.3.1). Histórico de API: `CHANGELOG.md`.
+Suíte do core: **263 testes** (verificado 2026-07-18; ver `HANDOFF.md` para o
+que mudou desde os 221 citados aqui originalmente — 8 correções PC-1 a PC-8
+em `PredictionPoint`, `TrialRegistry` e `data/quality.py`, todas testadas).
+Histórico de API: `CHANGELOG.md`. Continuidade operacional: `HANDOFF.md`.
 
 **Punição global (v1.3.0)**: `attest_pipeline_power(..., metric="rps")` grava a métrica
 no atestado; `register_trial(..., metric="rps")` exige match — harness atestado com
@@ -68,7 +71,16 @@ vendor de versão antiga aparece como **DRIFT**.
 ## Salvaguardas
 
 - O sync só escreve em domínios que **já** têm `vendor/predictor_core/` (opt-in).
-- Domínios **PARKED** (hoje: `wc-predictor`, em coleta da Copa até 19/07 — dado
-  irreproduzível) **nunca** são escritos, mesmo que tenham vendor.
+- Domínios **PARKED** (atualizado 2026-07-18 — a lista acima estava
+  desatualizada, citava só `wc-predictor`): hoje são exatamente três —
+  `wc-predictor-v2`, `predictor-stocks`, `nba-predictor` — declarados em
+  `sync_core.py:51` (`PARKED = {"wc-predictor-v2", "predictor-stocks",
+  "nba-predictor"}`). **Nunca** são escritos por `--write`, mesmo com
+  `--target` explícito (`_is_parked()` é checado antes de qualquer escrita,
+  independente de como o consumidor foi selecionado) — confirmado por
+  leitura de código e por teste de regressão em `tests/test_sync_core.py`.
+  Histórico: essa lista já ficou vazia por engano entre 2026-07-03 e
+  2026-07-17 (commit `15b6ada` corrigiu; ver `PENDENCIAS_ABERTAS.md` e
+  `FINAL_FORENSIC_REVIEW.md` para o incidente).
 - A evolução do núcleo é "por demanda": precisou de uma peça (ex.: o PSR), implementa
   AQUI, bumpa o `VERSION`, roda o sync.
