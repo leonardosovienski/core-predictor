@@ -232,3 +232,73 @@ def test_register_trial_lock_e_liberado_mesmo_apos_falha_de_validacao(tmp_path):
     # confirma que uma chamada seguinte não fica presa esperando o lock
     register_trial("m2", params={"c": 3}, path=p, **_NOGATE)
     assert {t["name"] for t in load_trials(p)} == {"m1", "m2"}
+
+
+# --- auditoria hostil 2026-07-17 (rodada predictor_core) ---------------------
+
+def test_params_com_nan_e_rejeitado(tmp_path):
+    p = tmp_path / "trials.json"
+    with pytest.raises(ValueError, match="NaN/Infinity"):
+        register_trial("t-nan", params={"h": float("nan")}, path=p, **_NOGATE)
+
+
+def test_params_com_infinity_aninhado_e_rejeitado(tmp_path):
+    p = tmp_path / "trials.json"
+    with pytest.raises(ValueError, match="NaN/Infinity"):
+        register_trial("t-inf", params={"grid": {"lr": [0.1, float("inf")]}}, path=p, **_NOGATE)
+
+
+def test_params_com_valor_nao_serializavel_da_erro_com_contexto(tmp_path):
+    import datetime as _dt
+    p = tmp_path / "trials.json"
+    with pytest.raises(ValueError, match="t-bad.*não serializável"):
+        register_trial("t-bad", params={"as_of": _dt.datetime(2026, 1, 1)}, path=p, **_NOGATE)
+
+
+def test_entrada_legada_malformada_nao_bloqueia_silenciosamente_trial_nova_valida(tmp_path):
+    # Regressão: a mensagem de erro precisa deixar claro que o problema é em
+    # OUTRA entrada, não na trial que está sendo registrada agora.
+    p = tmp_path / "trials.json"
+    p.write_text('[{"name": "legada sem underscore e com espaco", "registered_at": "x", '
+                 '"params": {}, "sharpe": null, "notes": ""}]', encoding="utf-8")
+    with pytest.raises(ValueError, match="a trial que você está registrando .'t-nova'. está OK"):
+        register_trial("t-nova", params={"h": 1}, path=p, **_NOGATE)
+
+
+def test_lock_reclama_imediatamente_quando_pid_dono_esta_morto(tmp_path, monkeypatch):
+    import json as _json
+    from predictor_core.measurement import trials as trials_mod
+    p = tmp_path / "trials.json"
+    lock = p.with_suffix(p.suffix + ".lock")
+    lock.write_text(_json.dumps({"pid": 999999999}), encoding="ascii")
+    monkeypatch.setattr(trials_mod, "_pid_alive", lambda pid: False)
+    acquired = trials_mod._acquire_trials_lock(p, timeout=10.0)
+    assert acquired == lock
+    trials_mod._release_trials_lock(lock)
+
+
+def test_lock_owner_pid_dead_e_false_quando_pid_esta_vivo(tmp_path, monkeypatch):
+    import json as _json
+    from predictor_core.measurement import trials as trials_mod
+    lock = tmp_path / "trials.json.lock"
+    lock.write_text(_json.dumps({"pid": 123}), encoding="ascii")
+    monkeypatch.setattr(trials_mod, "_pid_alive", lambda pid: True)
+    assert trials_mod._lock_owner_pid_dead(lock) is False
+
+
+def test_lock_owner_pid_dead_e_false_quando_conteudo_ilegivel(tmp_path):
+    from predictor_core.measurement import trials as trials_mod
+    lock = tmp_path / "trials.json.lock"
+    lock.write_text("nao e json", encoding="ascii")
+    assert trials_mod._lock_owner_pid_dead(lock) is False
+
+
+def test_lock_grava_pid_do_processo_atual(tmp_path):
+    import json as _json
+    from predictor_core.measurement import trials as trials_mod
+    import os as _os
+    p = tmp_path / "trials.json"
+    lock = trials_mod._acquire_trials_lock(p)
+    content = _json.loads(lock.read_text(encoding="ascii"))
+    assert content["pid"] == _os.getpid()
+    trials_mod._release_trials_lock(lock)
