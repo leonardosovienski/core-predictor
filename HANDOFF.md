@@ -19,7 +19,11 @@ de nome.
 
 ## 3. Estado atual
 
-35 módulos, **263 testes passed** (verificado 2026-07-18, cache limpo).
+38 módulos `.py` fora de `tests/`, excluindo `__init__.py` — sendo 32
+módulos reais e 6 compat shims na raiz (`infra.py`, `net.py`, `obs.py`,
+`replay.py`, `settings.py`, `stats.py`, que só re-exportam de `kernel/`
+e `measurement/`). **263 testes passed** (verificado 2026-07-19, cache
+limpo).
 5 vendors vivos byte-idênticos (`sync_core.py --check` e
 `tools/vendor_byte_audit.py` confirmam). 3 vendors PARKED em drift
 esperado, intocados. Nenhum bug de código conhecido em aberto.
