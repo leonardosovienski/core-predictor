@@ -1,6 +1,6 @@
 # HANDOFF — predictor_core/
 
-Verificado em: 2026-07-18. Commit-base: `9868c01` (branch `main`).
+Verificado em: 2026-07-20. Commit-base: `969cad5` (branch `main`).
 
 ## 1. Identidade
 
@@ -22,7 +22,7 @@ de nome.
 38 módulos `.py` fora de `tests/`, excluindo `__init__.py` — sendo 32
 módulos reais e 6 compat shims na raiz (`infra.py`, `net.py`, `obs.py`,
 `replay.py`, `settings.py`, `stats.py`, que só re-exportam de `kernel/`
-e `measurement/`). **263 testes passed** (verificado 2026-07-19, cache
+e `measurement/`). **263 testes passed** (verificado 2026-07-20, cache
 limpo).
 5 vendors vivos byte-idênticos (`sync_core.py --check` e
 `tools/vendor_byte_audit.py` confirmam). 3 vendors PARKED em drift
@@ -33,11 +33,13 @@ esperado, intocados. Nenhum bug de código conhecido em aberto.
 Branch única `main`. `VERSION` = `1.3.2-ga-20260720` (PATCH autorizado
 2026-07-20; formaliza as correções de contracts/trials/quality de
 17-18/07 — ver CHANGELOG). Commit-base desta
-verificação: `9868c01`.
+verificação: `969cad5`.
 
 ## 5. Estado Git
 
-Working tree limpo. Sem remoto configurado — nada publicado.
+Working tree limpo. Remoto `origin` aponta para
+`github.com/leonardosovienski/core-predictor`; `main` local e remota estão
+em `969cad5`.
 
 ## 6. Arquitetura
 
@@ -84,8 +86,9 @@ PID desde 2026-07-17.
 - `RatingBook` não normaliza identidade (`"Team A"` ≠ `"team a "`) —
   deliberado, normalizar mudaria ciência (SCI-1).
 - Lifecycle `PRE_EVENT`/`MATURED` de CS/F1/LoL **não é** um contrato do
-  core — são 3 implementações locais com garantias diferentes (CS tem
-  vínculo criptográfico via hash, F1 e LoL não). `SHARED_BUT_INCUBATING`,
+  core — são 3 implementações locais com garantias diferentes (CS e F1
+  vinculam PRE_EVENT→MATURED por hash do payload; LoL vincula por
+  `prediction_id`, sem hash do payload PRE_EVENT). `SHARED_BUT_INCUBATING`,
   não promovido (INC-1).
 
 ## 10. Decisões importantes
@@ -96,7 +99,7 @@ PID desde 2026-07-17.
   consumidor real comprovando a necessidade. Só `f1-predictor` usa
   `RatingBook` diretamente hoje.
 - **Não promover lifecycle compartilhado**: 3 implementações convergem em
-  conceito mas não em garantia (CS tem hash-linkage, F1/LoL não) —
+  conceito mas não em garantia (CS/F1 têm hash-linkage; LoL não) —
   promover um enum comum esconderia essa diferença real.
 - **PARKED repovoado em `15b6ada`** (2026-07-17): estava vazio desde
   2026-07-03 por decisão de uma sessão anterior de desparkar `wc-predictor`
