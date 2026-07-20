@@ -30,7 +30,9 @@ esperado, intocados. Nenhum bug de código conhecido em aberto.
 
 ## 4. Branch, versão e commit-base
 
-Branch única `main`. `VERSION` = `1.3.1-ga-20260716`. Commit-base desta
+Branch única `main`. `VERSION` = `1.3.2-ga-20260720` (PATCH autorizado
+2026-07-20; formaliza as correções de contracts/trials/quality de
+17-18/07 — ver CHANGELOG). Commit-base desta
 verificação: `9868c01`.
 
 ## 5. Estado Git

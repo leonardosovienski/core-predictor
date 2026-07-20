@@ -8,6 +8,19 @@ MAJOR + shim de deprecação por ≥1 ciclo MINOR.
 Rumo à **v1.0.0** (plataforma pronta para produção) conforme
 `docs/DESIGN_V1.md` — implementação por ondas (0→5). **v1.0.0 alcançada na Onda 5.**
 
+## [1.3.2-ga-20260720] — PATCH: endurecimento de contratos, trials e quality
+
+Formaliza em versão as 3 correções já presentes no payload desde 17-18/07
+(recomendação de PATCH registrada em `PENDENCIAS_ABERTAS.md` §10, autorizada
+pelo operador em 2026-07-20). Nenhuma API adicionada ou removida.
+
+- **`contracts/points.py`** (`c88a14c`): campos temporais rejeitam não-datetime;
+  comparação naive/aware não vaza mais `TypeError`; hash estável.
+- **`measurement/trials.py`** (`c44e3df`): NaN/Inf rejeitados em params com erro
+  claro; liveness de lock por PID.
+- **`data/quality.py`** (`9868c01`): `detect_jumps` não engole mais closes NaN
+  silenciosamente.
+
 ## [1.3.1-ga-20260716] — auditoria adversarial: 6 bugs + 6 gaps de contrato corrigidos
 
 Caçada adversarial sobre todos os módulos (sondas executadas, não só leitura).
