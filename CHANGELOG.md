@@ -8,6 +8,13 @@ MAJOR + shim de deprecação por ≥1 ciclo MINOR.
 Rumo à **v1.0.0** (plataforma pronta para produção) conforme
 `docs/DESIGN_V1.md` — implementação por ondas (0→5). **v1.0.0 alcançada na Onda 5.**
 
+## [1.3.3-ga-20260723]
+
+- Adicionado `ObservationEnvelope` e `CollectionArchive`: contrato versionado,
+  append-only e estritamente COLLECTION_ONLY para coleta de eventos.
+- Adicionada fachada pública `contracts.collection` e agregação de funil por
+  projeto, run e janela. Nenhum trial ou gate foi alterado.
+
 ## [1.3.2-ga-20260720] — PATCH: endurecimento de contratos, trials e quality
 
 Formaliza em versão as 3 correções já presentes no payload desde 17-18/07
