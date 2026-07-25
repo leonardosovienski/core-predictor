@@ -1,6 +1,6 @@
 # HANDOFF — predictor_core/
 
-Verificado em: 2026-07-20. Commit-base: `969cad5` (branch `main`).
+Verificado em: 2026-07-25. Commit-base: `2c5a040` (branch `main`).
 
 ## 1. Identidade
 
@@ -28,12 +28,22 @@ limpo).
 `tools/vendor_byte_audit.py` confirmam). 3 vendors PARKED em drift
 esperado, intocados. Nenhum bug de código conhecido em aberto.
 
+## COLLECTION_ONLY (entrega 1.3.3)
+
+`ObservationEnvelope` (`collection-only/1`) e `CollectionArchive` registram
+calendário, identidades, snapshots, resultados oficiais, provenance e telemetria
+em JSONL append-only. O lifecycle é monotônico e auditável; `COMPLETE` exige
+resultado oficial. O contrato não aceita estados científicos, `collection_run_id`
+não pode ser `trial_id` e `as_scientific_trial()` sempre falha.
+
+Validado em 2026-07-25: 268 testes passaram. `sync_core.py --check` confirmou
+brasileirao-predictor, lol-predictor, cs-predictor e f1-predictor byte-idênticos
+ao canônico. Consulte `docs/COLLECTION_ONLY_HANDOFF.md`.
+
 ## 4. Branch, versão e commit-base
 
-Branch única `main`. `VERSION` = `1.3.2-ga-20260720` (PATCH autorizado
-2026-07-20; formaliza as correções de contracts/trials/quality de
-17-18/07 — ver CHANGELOG). Commit-base desta
-verificação: `969cad5`.
+Branch única `main`. `VERSION` = `1.3.3-ga-20260723`.
+Commit-base desta verificação: `2c5a040`.
 
 ## 5. Estado Git
 
@@ -124,7 +134,7 @@ engolir silenciosamente (`9868c01`). Mais `15b6ada` (PARKED repovoado).
 cd predictor_core
 python -m pytest -q
 ```
-Resultado esperado: `263 passed`. Ver `RUNBOOK_TESTS.md` e
+Resultado esperado: `268 passed`. Ver `RUNBOOK_TESTS.md` e
 `RUNBOOK_VENDOR_SYNC.md`.
 
 ## 13. Automação
