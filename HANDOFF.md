@@ -22,11 +22,24 @@ de nome.
 38 módulos `.py` fora de `tests/`, excluindo `__init__.py` — sendo 32
 módulos reais e 6 compat shims na raiz (`infra.py`, `net.py`, `obs.py`,
 `replay.py`, `settings.py`, `stats.py`, que só re-exportam de `kernel/`
-e `measurement/`). **263 testes passed** (verificado 2026-07-20, cache
-limpo).
-5 vendors vivos byte-idênticos (`sync_core.py --check` e
-`tools/vendor_byte_audit.py` confirmam). 3 vendors PARKED em drift
-esperado, intocados. Nenhum bug de código conhecido em aberto.
+e `measurement/`). **268 testes passed** (reverificado 2026-07-26).
+
+**4 dos 5 consumidores vivos byte-idênticos** (46/46): brasileirao,
+cs, f1 e lol. O quinto, `previsao-cripto`, está em **1.3.2 — DRIFT
+conhecido e deliberado** (faltam `contracts/collection.py` e
+`data/collection.py`); é drift limpo, manifest coerente
+`dc7676a61c86f908`, e faz `sync_core.py --check` sair com exit 1. A
+sincronização está **adiada até depois do gate de 28/07** para não trocar
+código no meio da trial H5 em curso — ver `BLOQUEIOS_GO_2026-07-25.md`
+B-6. 3 vendors PARKED em drift esperado, intocados.
+
+> **Errata de 2026-07-26.** Este parágrafo dizia "263 testes" e "5 vendors
+> vivos byte-idênticos". Os dois números estavam errados: são 268 desde a
+> entrega do `COLLECTION_ONLY`, e são 4 de 5 — a própria seção seguinte
+> deste arquivo já listava só quatro. Verificado por execução de
+> `sync_core.py --check` e `tools/vendor_byte_audit.py`.
+
+Nenhum bug de código conhecido em aberto nesta camada.
 
 ## COLLECTION_ONLY (entrega 1.3.3)
 
