@@ -10,6 +10,11 @@ jobs:
   validate-core:
     name: Validar Contratos e Matemática
     runs-on: ubuntu-latest
+    
+    # MELHORIA 1: Definimos o PYTHONPATH globalmente para o job inteiro. 
+    # Assim, tanto o pytest quanto o sync_core.py enxergam a pasta raiz como um pacote.
+    env:
+      PYTHONPATH: ${{ github.workspace }}
 
     steps:
     - name: Checkout do repositório
@@ -18,7 +23,10 @@ jobs:
     - name: Configurar o Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11' # Versão recomendada para os recursos modernos
+        python-version: '3.11'
+        # MELHORIA 2: Cache do pip. Isso salva as dependências e faz o CI rodar 
+        # muito mais rápido (e mais barato) nas próximas execuções.
+        cache: 'pip' 
 
     - name: Instalar dependências da plataforma
       run: |
@@ -28,8 +36,10 @@ jobs:
 
     - name: Rodar a suíte do Pytest
       run: |
-        # Executa os 263+ testes da suíte
-        pytest
+        # MELHORIA 3: Adicionada a flag -v (verbose). 
+        # Se algum teste falhar no futuro, o log do Actions vai te mostrar 
+        # exatamente qual foi e os detalhes, em vez de um resumo genérico.
+        pytest -v
 
     - name: Validar integridade do Motor de Sincronização
       run: |
