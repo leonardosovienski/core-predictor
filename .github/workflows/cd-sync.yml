@@ -12,14 +12,14 @@ jobs:
     steps:
       # 1. Baixamos o seu CORE na pasta correta para evitar erro de módulo
       - name: Checkout do repositório core
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: predictor_core
 
       # 2. Baixamos o repositório CONSUMIDOR (Exemplo: cs-predictor)
       # ATENÇÃO: Repita este bloco para os outros repositórios consumidores se houver
       - name: Checkout do cs-predictor
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: leonardosovienski/cs-predictor
           token: ${{ secrets.SYNC_PAT_TOKEN }}
