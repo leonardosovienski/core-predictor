@@ -24,9 +24,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-        # MELHORIA 2: Cache do pip. Isso salva as dependências e faz o CI rodar 
-        # muito mais rápido (e mais barato) nas próximas execuções.
-        cache: 'pip' 
+        # Sem cache de dependências por enquanto, já que a instalação é rápida!
 
     - name: Instalar dependências da plataforma
       run: |
