@@ -1,6 +1,6 @@
 # HANDOFF — predictor_core/
 
-Verificado em: 2026-07-25. Commit-base: `2c5a040` (branch `main`).
+Verificado em: 2026-07-25. Commit-base: `11c4792` (branch `main`).
 
 ## 1. Identidade
 
@@ -19,27 +19,23 @@ de nome.
 
 ## 3. Estado atual
 
-38 módulos `.py` fora de `tests/`, excluindo `__init__.py` — sendo 32
-módulos reais e 6 compat shims na raiz (`infra.py`, `net.py`, `obs.py`,
+40 arquivos `.py` fora de `tests/`, excluindo `__init__.py` — 33 módulos
+reais, 6 compat shims na raiz (`infra.py`, `net.py`, `obs.py`,
 `replay.py`, `settings.py`, `stats.py`, que só re-exportam de `kernel/`
-e `measurement/`). **268 testes passed** (reverificado 2026-07-26).
+e `measurement/`) e `sync_core.py` (distribuidor, não payload).
+**268 testes passed** (verificado 2026-07-25, cache limpo).
 
-**4 dos 5 consumidores vivos byte-idênticos** (46/46): brasileirao,
-cs, f1 e lol. O quinto, `previsao-cripto`, está em **1.3.2 — DRIFT
-conhecido e deliberado** (faltam `contracts/collection.py` e
-`data/collection.py`); é drift limpo, manifest coerente
-`dc7676a61c86f908`, e faz `sync_core.py --check` sair com exit 1. A
-sincronização está **adiada até depois do gate de 28/07** para não trocar
-código no meio da trial H5 em curso — ver `BLOQUEIOS_GO_2026-07-25.md`
-B-6. 3 vendors PARKED em drift esperado, intocados.
+4 dos 5 vendors vivos byte-idênticos, 46/46 arquivos cada (`sync_core.py
+--check` e `tools/vendor_byte_audit.py` confirmam): `brasileirao-predictor`,
+`cs-predictor`, `f1-predictor` e `lol-predictor`. `previsao-cripto` está em
+DRIFT — vendor parado em `1.3.2-ga-20260720` (`synced_at 2026-07-20`),
+44/46 arquivos, faltando `contracts/collection.py` e `data/collection.py`:
+não recebeu a entrega 1.3.3. É atraso de sync, não adulteração — o manifest
+do vendor é internamente coerente (agregado gravado = agregado real
+`dc7676a61c86f908`). Por isso `sync_core.py --check` retorna exit 1.
 
-> **Errata de 2026-07-26.** Este parágrafo dizia "263 testes" e "5 vendors
-> vivos byte-idênticos". Os dois números estavam errados: são 268 desde a
-> entrega do `COLLECTION_ONLY`, e são 4 de 5 — a própria seção seguinte
-> deste arquivo já listava só quatro. Verificado por execução de
-> `sync_core.py --check` e `tools/vendor_byte_audit.py`.
-
-Nenhum bug de código conhecido em aberto nesta camada.
+3 vendors PARKED em drift esperado, intocados. Nenhum bug de código
+conhecido em aberto.
 
 ## COLLECTION_ONLY (entrega 1.3.3)
 
@@ -56,13 +52,15 @@ ao canônico. Consulte `docs/COLLECTION_ONLY_HANDOFF.md`.
 ## 4. Branch, versão e commit-base
 
 Branch única `main`. `VERSION` = `1.3.3-ga-20260723`.
-Commit-base desta verificação: `2c5a040`.
+Commit-base desta verificação: `11c4792`.
 
 ## 5. Estado Git
 
 Working tree limpo. Remoto `origin` aponta para
-`github.com/leonardosovienski/core-predictor`; `main` local e remota estão
-em `969cad5`.
+`github.com/leonardosovienski/core-predictor`. `main` local está em
+`11c4792`, **2 commits à frente** de `origin/main` (`969cad5`, pela ref
+local — sem `fetch` em 2026-07-25): `2c5a040` (contrato COLLECTION_ONLY) e
+`11c4792` (handoff) ainda não publicados.
 
 ## 6. Arquitetura
 
@@ -193,6 +191,21 @@ lookahead reportado por um consumidor.
 
 ## 20. Próxima ação legítima
 
-Nenhuma pendente que exija ação imediata. Rodar `RUNBOOK_VENDOR_SYNC.md`
-antes de qualquer mudança futura no core, seguido de
+**Pendente: sincronizar o `previsao-cripto`** — é o único bloqueio aberto
+(ver §3). Enquanto ele ficar em `1.3.2-ga-20260720`, `sync_core.py --check`
+retorna exit 1. Note que o rollout da 1.3.3 em
+`docs/COLLECTION_ONLY_HANDOFF.md` listou explicitamente só
+`brasileirao-predictor`, `lol-predictor`, `cs-predictor` e `f1-predictor`:
+decida se a omissão do `previsao-cripto` foi escopo deliberado ou lacuna
+antes de agir. Após revisão coordenada do consumidor, seguindo
+`RUNBOOK_VENDOR_SYNC.md`:
+
+```powershell
+python sync_core.py --check
+python sync_core.py --write --target previsao-cripto
+```
+
+Nenhuma outra ação pendente: zero bug de código conhecido, zero teste
+falhando, zero vendor adulterado. Rodar `RUNBOOK_VENDOR_SYNC.md` antes de
+qualquer mudança futura no core, seguido de
 `RUNBOOK_ARTIFACT_INTEGRITY.md` para confirmar preservação científica.
