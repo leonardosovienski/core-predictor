@@ -1,0 +1,37 @@
+name: CI - Core Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  validate-core:
+    name: Validar Contratos e Matemática
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout do repositório
+      uses: actions/checkout@v4
+
+    - name: Configurar o Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11' # Versão recomendada para os recursos modernos
+
+    - name: Instalar dependências da plataforma
+      run: |
+        python -m pip install --upgrade pip
+        # Instalando as dependências citadas no seu README
+        pip install pytest pydantic httpx curl_cffi 
+
+    - name: Rodar a suíte do Pytest
+      run: |
+        # Executa os 263+ testes da suíte
+        pytest
+
+    - name: Validar integridade do Motor de Sincronização
+      run: |
+        # Garante que as regras de domínios PARKED não foram quebradas
+        python sync_core.py --check
