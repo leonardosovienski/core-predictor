@@ -2,7 +2,7 @@ name: CD - Sync Core to Consumers
 
 on:
   release:
-    types: [published] # Só roda quando você publica uma release (ex: v1.4.0)
+    types: [published] # O gatilho: só roda quando você publica uma release
 
 jobs:
   distribute:
@@ -10,20 +10,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # 1. Baixamos o seu CORE na pasta correta para evitar erro de módulo
     - name: Checkout do repositório core
       uses: actions/checkout@v4
       with:
-        path: core-predictor # Baixa o core numa pasta específica
+        path: predictor_core
 
-    # NOTA: O script sync_core.py presume que os repositórios consumidores
-    # estejam na mesma pasta pai. Precisamos simular isso no CI.
-    
-    - name: Checkout dos repositórios consumidores
-      # Exemplo para um consumidor. Você precisaria repetir para os outros 4 ativos.
+    # 2. Baixamos o repositório CONSUMIDOR (Exemplo: cs-predictor)
+    # ATENÇÃO: Repita este bloco para os outros repositórios consumidores se houver
+    - name: Checkout do cs-predictor
       uses: actions/checkout@v4
       with:
         repository: leonardosovienski/cs-predictor
-        token: ${{ secrets.SYNC_PAT_TOKEN }} # Token com permissão para commitar nos outros repos
+        token: ${{ secrets.SYNC_PAT_TOKEN }}
         path: cs-predictor
 
     - name: Configurar Python
@@ -31,17 +30,27 @@ jobs:
       with:
         python-version: '3.11'
 
+    - name: Instalar dependências
+      working-directory: ./predictor_core
+      run: |
+        python -m pip install --upgrade pip
+        pip install pydantic httpx curl_cffi
+
     - name: Executar Motor de Distribuição (--write)
+      working-directory: ./predictor_core
       run: |
-        cd core-predictor
-        python sync_core.py --write
+        # Injeta o diretório atual no Python e roda o sync
+        PYTHONPATH=.. python sync_core.py --write
         
-    - name: Commitar alterações nos consumidores
+    - name: Commitar alterações no cs-predictor
+      working-directory: ./cs-predictor
       run: |
-        cd cs-predictor
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        
+        # Adiciona a pasta de vendor e o manifesto
         git add vendor/predictor_core/ CORE_MANIFEST.json
-        # Só commita se houver mudanças
+        
+        # Só commita se houver mudanças, evitando erros se o sync não mudou nada
         git diff --quiet && git diff --staged --quiet || git commit -m "chore(core): auto-sync com core-predictor ${{ github.event.release.tag_name }}"
         git push
