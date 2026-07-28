@@ -1,0 +1,47 @@
+name: CD - Sync Core to Consumers
+
+on:
+  release:
+    types: [published] # Só roda quando você publica uma release (ex: v1.4.0)
+
+jobs:
+  distribute:
+    name: Sincronizar domínios via sync_core.py
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout do repositório core
+      uses: actions/checkout@v4
+      with:
+        path: core-predictor # Baixa o core numa pasta específica
+
+    # NOTA: O script sync_core.py presume que os repositórios consumidores
+    # estejam na mesma pasta pai. Precisamos simular isso no CI.
+    
+    - name: Checkout dos repositórios consumidores
+      # Exemplo para um consumidor. Você precisaria repetir para os outros 4 ativos.
+      uses: actions/checkout@v4
+      with:
+        repository: leonardosovienski/cs-predictor
+        token: ${{ secrets.SYNC_PAT_TOKEN }} # Token com permissão para commitar nos outros repos
+        path: cs-predictor
+
+    - name: Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Executar Motor de Distribuição (--write)
+      run: |
+        cd core-predictor
+        python sync_core.py --write
+        
+    - name: Commitar alterações nos consumidores
+      run: |
+        cd cs-predictor
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add vendor/predictor_core/ CORE_MANIFEST.json
+        # Só commita se houver mudanças
+        git diff --quiet && git diff --staged --quiet || git commit -m "chore(core): auto-sync com core-predictor ${{ github.event.release.tag_name }}"
+        git push
