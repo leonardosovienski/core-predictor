@@ -1,1 +1,15 @@
+version: 2
+updates:
+  # 1. Atualiza as suas GitHub Actions (CI/CD)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
 
+  # 2. Atualiza as dependências do seu projeto Python (pip)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
