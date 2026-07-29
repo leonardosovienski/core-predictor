@@ -14,7 +14,7 @@ jobs:
     steps:
     # O PULO DO GATO: Mandamos o Actions baixar o repo numa pasta chamada 'predictor_core'
     - name: Checkout do repositório
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         path: predictor_core
 
