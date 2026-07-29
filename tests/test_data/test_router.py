@@ -1,6 +1,6 @@
 """router — fallback sequencial, consenso concorrente, circuit breaker (via asyncio.run)."""
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -8,7 +8,7 @@ from predictor_core.data.circuit_breaker import CircuitBreaker
 from predictor_core.data.contracts import DataProvider, DataUnavailableError, MarketDataPoint
 from predictor_core.data.router import AggregationRouter, FallbackRouter
 
-T0 = datetime(2026, 7, 3)
+T0 = datetime(2026, 7, 3, tzinfo=timezone.utc)
 
 
 def _pt(close, src):

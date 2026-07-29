@@ -1,11 +1,11 @@
 """contracts — invariantes temporais falham EXPLÍCITO (não em silêncio)."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from predictor_core.data.contracts import MarketDataPoint, SignalPoint
 
-T0 = datetime(2026, 7, 3, 12, 0, 0)
+T0 = datetime(2026, 7, 3, 12, 0, 0, tzinfo=timezone.utc)
 
 
 def _mdp(**kw):
@@ -29,6 +29,11 @@ def test_market_data_point_high_below_low_raises():
 def test_market_data_point_published_before_timestamp_raises():
     with pytest.raises(ValueError):
         _mdp(published_at=T0 - timedelta(hours=1))
+
+
+def test_market_data_point_rejects_naive_timestamp():
+    with pytest.raises(ValueError, match="timezone"):
+        _mdp(timestamp=datetime(2026, 7, 3, 12, 0))
 
 
 def test_market_data_point_frozen():

@@ -88,7 +88,7 @@ def payload_files(root: Path) -> list[Path]:
 def manifest(root: Path) -> dict:
     """Manifesto: {caminho_relativo_posix: sha256} + agregado determinístico."""
     files = {p.relative_to(root).as_posix(): _sha256(p) for p in payload_files(root)}
-    aggregate = hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest()[:16]
+    aggregate = hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest()
     return {"files": files, "aggregate": aggregate}
 
 
@@ -198,13 +198,64 @@ def _prune_tree(vendor: Path, payload_rel: set) -> None:
             pass
 
 
+def _recover_vendor_swap(vendor: Path) -> tuple[Path, Path]:
+    """Recupera um swap interrompido antes de iniciar um novo sync.
+
+    O vendor final nunca é alterado durante a preparação: uma árvore irmã é
+    completamente montada e validada antes da troca. Se o processo morrer entre
+    os dois renames, a próxima execução restaura o backup conhecido.
+    """
+    staging = vendor.with_name(vendor.name + ".sync-staging")
+    backup = vendor.with_name(vendor.name + ".sync-backup")
+    if not vendor.exists() and backup.exists():
+        backup.replace(vendor)
+    if staging.exists():
+        shutil.rmtree(staging)
+    if vendor.exists() and backup.exists():
+        shutil.rmtree(backup)
+    return staging, backup
+
+
+def _write_vendor_atomically(vendor: Path, files: list[Path], canon: dict,
+                             source_version: str, stamp: str) -> None:
+    """Publica uma nova árvore por staging e swap recuperável.
+
+    Diretórios não têm replace-atômico portável entre Windows e POSIX. A
+    garantia oferecida é: falha na preparação preserva o vendor e uma queda
+    durante o swap é recuperada deterministicamente no próximo sync.
+    """
+    staging, backup = _recover_vendor_swap(vendor)
+    for source in files:
+        rel = source.relative_to(CANONICAL)
+        dest_path = staging / rel
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, dest_path)
+    out = {**canon, "synced_at": stamp, "source_version": source_version}
+    manifest_path = staging / MANIFEST_NAME
+    manifest_path.write_text(json.dumps(out, indent=2, ensure_ascii=False, sort_keys=True),
+                             encoding="utf-8")
+    # O staging já contém a árvore inteira; qualquer erro antes daqui deixa o
+    # vendor anterior intacto. O backup permite recuperação determinística
+    # caso a máquina caia entre os dois renames.
+    vendor.replace(backup)
+    try:
+        # O destino foi movido para `backup`; `rename` evita o modo
+        # REPLACE_EXISTING de Windows, que rejeita a troca de diretórios mesmo
+        # quando o destino já não existe.
+        staging.rename(vendor)
+    except BaseException:
+        if backup.exists() and not vendor.exists():
+            backup.replace(vendor)
+        raise
+    shutil.rmtree(backup)
+
+
 def cmd_write(target: str | None = None) -> int:
     canon = manifest(CANONICAL)
     selected = _select_consumers(target)
     if selected is None:
         return 2
     files = payload_files(CANONICAL)
-    payload_rel = {f.relative_to(CANONICAL).as_posix() for f in files}
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     source_version = (CANONICAL / "VERSION").read_text(encoding="utf-8").strip().split("\n")[0]
     wrote = 0
@@ -213,15 +264,7 @@ def cmd_write(target: str | None = None) -> int:
             print(f"  {d.name:<20} PULADO (PARKED — não se escreve em domínio congelado)")
             continue
         vendor = d / "vendor" / "predictor_core"
-        for f in files:
-            rel = f.relative_to(CANONICAL)
-            target = vendor / rel
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(f, target)
-        _prune_tree(vendor, payload_rel)
-        out = {**canon, "synced_at": stamp, "source_version": source_version}
-        (vendor / MANIFEST_NAME).write_text(
-            json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
+        _write_vendor_atomically(vendor, files, canon, source_version, stamp)
         print(f"  {d.name:<20} sincronizado ({len(files)} arquivos, agregado {canon['aggregate']})")
         wrote += 1
     parked = ", ".join(sorted(PARKED)) or "(nenhum)"

@@ -22,27 +22,29 @@ def _attest(trials_path, metric):
 
 def test_matching_metric_passes(tmp_path):
     trials = tmp_path / "trials.json"
-    _attest(trials, metric="brier")
-    out = register_trial("t1", params={"m": 1}, path=trials, metric="brier")
+    att = _attest(trials, metric="brier")
+    out = register_trial("t1", params={"m": 1}, path=trials, metric="brier",
+                         pipeline_fingerprint=att["pipeline_fingerprint"])
     assert out[0]["metric"] == "brier"
 
 
 def test_mismatched_metric_is_punished(tmp_path):
     trials = tmp_path / "trials.json"
-    _attest(trials, metric="brier")
+    att = _attest(trials, metric="brier")
     with pytest.raises(MetricMismatchError):
-        register_trial("t1", params={"m": 1}, path=trials, metric="rps")
+        register_trial("t1", params={"m": 1}, path=trials, metric="rps",
+                       pipeline_fingerprint=att["pipeline_fingerprint"])
 
 
-def test_metric_omitted_keeps_v11_behavior(tmp_path):
+def test_metric_omitted_is_rejected_for_new_trial(tmp_path):
     trials = tmp_path / "trials.json"
-    _attest(trials, metric="brier")
-    out = register_trial("t1", params={"m": 1}, path=trials)  # sem metric: só exige atestado
-    assert "metric" not in out[0]
-
-
-def test_attestation_without_metric_fails_metric_trial(tmp_path):
-    trials = tmp_path / "trials.json"
-    _attest(trials, metric="")
+    att = _attest(trials, metric="brier")
     with pytest.raises(MetricMismatchError):
-        register_trial("t1", params={"m": 1}, path=trials, metric="rps")
+        register_trial("t1", params={"m": 1}, path=trials,
+                       pipeline_fingerprint=att["pipeline_fingerprint"])
+
+
+def test_attestation_requires_metric(tmp_path):
+    trials = tmp_path / "trials.json"
+    with pytest.raises(ValueError, match="metric"):
+        _attest(trials, metric="")

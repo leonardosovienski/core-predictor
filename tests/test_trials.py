@@ -70,6 +70,18 @@ def test_campos_opcionais_do_schema(tmp_path):
     assert validate_trials(load_trials(p)) == []
 
 
+def test_extra_desconhecido_e_rejeitado_antes_de_persistir(tmp_path):
+    with pytest.raises(ValueError, match="campos extras"):
+        register_trial("t-a", params={"h": 7}, path=tmp_path / "trials.json",
+                       featuers_used=["typo"], **_NOGATE)
+
+
+def test_validate_trials_rejeita_campos_desconhecidos_em_arquivo_legado():
+    trial = {"name": "t1", "registered_at": "2026-07-07T00:00:00Z",
+             "params": {"a": 1}, "sharpe": None, "notes": "", "featuers_used": []}
+    assert any("campos desconhecidos" in error for error in validate_trials([trial]))
+
+
 @pytest.mark.parametrize("mutacao,erro", [
     ({"name": "com espaço"}, "name inválido"),
     ({"registered_at": "2026-07-07"}, "registered_at inválido"),
@@ -101,9 +113,10 @@ def test_atestado_do_harness_destrava_o_registro(tmp_path):
     p = tmp_path / "trials.json"
     rec = attest_pipeline_power(
         _eval_mean, lambda: [1.0] * 10, lambda: [0.0] * 10,
-        attestation_path=attestation_path_for(p), note="teste")
+        attestation_path=attestation_path_for(p), note="teste", metric="brier")
     assert rec["passed_at"]
-    register_trial("t-a", params={"h": 7}, path=p)   # agora passa
+    register_trial("t-a", params={"h": 7}, path=p, metric="brier",
+                   pipeline_fingerprint=rec["pipeline_fingerprint"])
     assert load_trials(p)[0]["name"] == "t-a"
 
 
@@ -115,7 +128,7 @@ def test_harness_reprovado_nao_emite_atestado(tmp_path):
         # pipeline cego: nunca detecta o edge
         attest_pipeline_power(lambda s: {"verdict": "REFUTADA"},
                               lambda: [1.0] * 10, lambda: [0.0] * 10,
-                              attestation_path=ap)
+                              attestation_path=ap, metric="brier")
     assert not ap.exists()
 
 
@@ -284,6 +297,19 @@ def test_lock_owner_pid_dead_e_false_quando_pid_esta_vivo(tmp_path, monkeypatch)
     lock.write_text(_json.dumps({"pid": 123}), encoding="ascii")
     monkeypatch.setattr(trials_mod, "_pid_alive", lambda pid: True)
     assert trials_mod._lock_owner_pid_dead(lock) is False
+
+
+def test_lock_vivo_nao_e_roubado_por_idade(tmp_path, monkeypatch):
+    import json as _json
+    from predictor_core.measurement import trials as trials_mod
+    p = tmp_path / "trials.json"
+    lock = p.with_suffix(p.suffix + ".lock")
+    lock.write_text(_json.dumps({"pid": 123}), encoding="ascii")
+    monkeypatch.setattr(trials_mod, "_pid_alive", lambda pid: True)
+    monkeypatch.setattr(trials_mod.time, "time", lambda: lock.stat().st_mtime + 10_000)
+    with pytest.raises(TimeoutError):
+        trials_mod._acquire_trials_lock(p, timeout=0.0)
+    assert lock.exists()
 
 
 def test_lock_owner_pid_dead_e_false_quando_conteudo_ilegivel(tmp_path):

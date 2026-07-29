@@ -1,6 +1,6 @@
 # HANDOFF — predictor_core/
 
-Verificado em: 2026-07-25. Commit-base: `11c4792` (branch `main`).
+Verificado em: 2026-07-29. Estado de trabalho: preparação da release 2.0.0.
 
 ## 1. Identidade
 
@@ -23,7 +23,7 @@ de nome.
 reais, 6 compat shims na raiz (`infra.py`, `net.py`, `obs.py`,
 `replay.py`, `settings.py`, `stats.py`, que só re-exportam de `kernel/`
 e `measurement/`) e `sync_core.py` (distribuidor, não payload).
-**268 testes passed** (verificado 2026-07-25, cache limpo).
+**273 testes coletados** na validação local de 2026-07-29.
 
 4 dos 5 vendors vivos byte-idênticos, 46/46 arquivos cada (`sync_core.py
 --check` e `tools/vendor_byte_audit.py` confirmam): `brasileirao-predictor`,
@@ -51,12 +51,11 @@ ao canônico. Consulte `docs/COLLECTION_ONLY_HANDOFF.md`.
 
 ## 4. Branch, versão e commit-base
 
-Branch única `main`. `VERSION` = `1.3.3-ga-20260723`.
-Commit-base desta verificação: `11c4792`.
+Branch única `main`. `VERSION` = `2.0.0-ga-20260729`.
 
 ## 5. Estado Git
 
-Working tree limpo. Remoto `origin` aponta para
+Há mudanças locais ainda não commitadas da release 2.0.0. Remoto `origin` aponta para
 `github.com/leonardosovienski/core-predictor`. `main` local está em
 `11c4792`, **2 commits à frente** de `origin/main` (`969cad5`, pela ref
 local — sem `fetch` em 2026-07-25): `2c5a040` (contrato COLLECTION_ONLY) e
@@ -130,7 +129,7 @@ PID desde 2026-07-17.
 
 ## 11. Correções recentes
 
-Ver `FINAL_FORENSIC_REVIEW.md` (commit `cca60f0`) para verificação
+Ver o histórico de commits, o CHANGELOG e os testes de regressão para verificação
 detalhada — 8 correções nesta rodada (PC-1 a PC-8): validação de tipo em
 `PredictionPoint` (`c88a14c`), rejeição de naive/aware misto (`c88a14c`),
 `__hash__` estável (`c88a14c`), NaN/Inf em params de trial rejeitado
@@ -166,14 +165,12 @@ de credenciais consumida por domínios que precisam de chaves externas.
 
 ## 16. Pendências
 
-Ver `PENDENCIAS_ABERTAS.md` seções 4 e 5 (SCI-1 a SCI-4, INC-1) — todas
-`CORRECTLY_DEFERRED`/`SHARED_BUT_INCUBATING`, nenhuma bloqueante.
+Não há pendências documentadas no repositório nesta release.
 
 ## 17. Riscos
 
-Ver seção 9 acima ("Limites explícitos, não bugs") e
-`PENDENCIAS_ABERTAS.md` para a lista de riscos residuais com condição de
-reabertura.
+Ver seção 9 acima ("Limites explícitos, não bugs") para riscos residuais e
+condições de reabertura.
 
 ## 18. O que não fazer
 

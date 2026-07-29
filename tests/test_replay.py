@@ -17,6 +17,17 @@ def test_pastview_blocks_future_index():
     assert out == [1, 2, 3]
 
 
+def test_pastview_nao_carrega_futuro_nem_no_atributo_privado():
+    """O encapsulamento não pode ser a única barreira contra lookahead."""
+    seen = []
+
+    def handler(past):
+        seen.append(tuple(past._data))
+
+    replay.replay([10, 20, 30], handler)
+    assert seen == [(10,), (10, 20), (10, 20, 30)]
+
+
 def test_pastview_slice_clamps_to_past():
     seen = {}
 

@@ -8,6 +8,29 @@ MAJOR + shim de deprecação por ≥1 ciclo MINOR.
 Rumo à **v1.0.0** (plataforma pronta para produção) conforme
 `docs/DESIGN_V1.md` — implementação por ondas (0→5). **v1.0.0 alcançada na Onda 5.**
 
+## [2.0.0-ga-20260729] — robustez operacional e governança vinculada
+
+### Corrigido
+- `sync_core --write` prepara a árvore completa em staging e publica por swap
+  recuperável; falha na preparação preserva o vendor anterior. O agregado do
+  manifest preserva o SHA-256 completo.
+- `PastView` recebe somente o prefixo já observado; nem o atributo interno da
+  view carrega eventos futuros.
+- Lock de trials com PID vivo não é mais roubado por idade.
+
+### Alterado
+- Atestados de poder são versionados, expiram em sete dias e registram versão
+  do core, métrica e fingerprint do pipeline. Trials novas protegidas exigem
+  `metric` e `pipeline_fingerprint` compatíveis.
+- `TrialRegistry` rejeita campos desconhecidos. `PredictionPoint` congela
+  recursivamente containers conhecidos. `MetricMismatchError` está disponível
+  pelas fachadas `contracts`.
+
+### Migração incompatível
+- Após `attest_pipeline_power(..., metric="...")`, passe o
+  `pipeline_fingerprint` retornado ao registrar uma trial nova. O bypass
+  `power_attestation=False` permanece reservado a testes de mecânica.
+
 ## [1.3.3-ga-20260723]
 
 - Adicionado `ObservationEnvelope` e `CollectionArchive`: contrato versionado,

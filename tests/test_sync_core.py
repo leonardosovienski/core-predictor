@@ -7,6 +7,8 @@ diria "em sincronia" — adulteração invisível.
 """
 import json
 
+import pytest
+
 import sync_core
 
 # Auditoria hostil 2026-07-17 (rodada "tools/"): PARKED ficou vazio entre 2026-07-03
@@ -200,6 +202,26 @@ def test_conteudo_vendorizado_do_alvo_byte_identico_ao_canonico(tmp_path, monkey
     sync_core.cmd_write(target="alvo")
     assert (alvo / "mod.py").read_bytes() == (canonical / "mod.py").read_bytes()
     assert (alvo / "VERSION").read_bytes() == (canonical / "VERSION").read_bytes()
+
+
+def test_falha_na_preparacao_do_staging_preserva_vendor_anterior(tmp_path, monkeypatch, capsys):
+    canonical, vendor = _make_workspace(tmp_path)
+    _patch(monkeypatch, canonical)
+    sync_core.cmd_write()
+    before = _snapshot(vendor)
+    (canonical / "mod.py").write_text("X = 2\n", encoding="utf-8")
+    original_copy = sync_core.shutil.copy2
+
+    def fail_copy(source, destination, *args, **kwargs):
+        if Path(source).name == "mod.py":
+            raise OSError("simulated disk failure")
+        return original_copy(source, destination, *args, **kwargs)
+
+    from pathlib import Path
+    monkeypatch.setattr(sync_core.shutil, "copy2", fail_copy)
+    with pytest.raises(OSError, match="simulated disk failure"):
+        sync_core.cmd_write()
+    assert _snapshot(vendor) == before
 
 
 def test_resultado_deterministico_exceto_synced_at_do_alvo(tmp_path, monkeypatch, capsys):

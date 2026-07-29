@@ -45,13 +45,15 @@ def test_metadata_mutada_apos_construcao_nao_vaza_para_o_objeto():
     meta["future_price"] = 99999
     assert pp.metadata["asset"] == "BTCUSDT"
     assert "future_price" not in pp.metadata
+    with pytest.raises(TypeError):
+        pp.metadata["asset"] = "SOLUSDT"
 
 
 def test_value_lista_mutada_apos_construcao_nao_vaza_para_o_objeto():
     valor = [1, 2, 3]
     pp = PredictionPoint(predicted_at=_T0, matures_at=_T0, value=valor)
     valor.append(999)
-    assert pp.value == [1, 2, 3]
+    assert pp.value == (1, 2, 3)
 
 
 def test_value_escalar_nao_e_afetado_pela_copia_defensiva():
@@ -71,21 +73,19 @@ def test_matures_at_string_e_rejeitado_com_typeerror_claro():
         PredictionPoint(predicted_at=_T0, matures_at="2026-07-09T12:00:00+00:00", value=1)
 
 
-def test_naive_vs_aware_e_rejeitado_com_valueerror_claro_nao_typeerror_cru():
+def test_naive_e_rejeitado_com_valueerror_claro():
     naive = datetime(2026, 7, 9, 12, 0)  # sem tzinfo
-    with pytest.raises(ValueError, match="naive e timezone-aware"):
+    with pytest.raises(ValueError, match="timezone"):
         PredictionPoint(predicted_at=_T0, matures_at=naive, value=1)
-    with pytest.raises(ValueError, match="naive e timezone-aware"):
+    with pytest.raises(ValueError, match="timezone"):
         PredictionPoint(predicted_at=naive, matures_at=_T0, value=1)
 
 
-def test_dois_naive_consistentes_sao_aceitos():
-    # A checagem é sobre MISTURA de regimes, não uma exigência de que tudo
-    # seja aware — dois naive comparáveis continuam válidos.
+def test_dois_naive_sao_rejeitados_na_fronteira_utc():
     naive_early = datetime(2026, 7, 9, 12, 0)
     naive_late = datetime(2026, 7, 9, 13, 0)
-    pp = PredictionPoint(predicted_at=naive_early, matures_at=naive_late, value=1)
-    assert pp.matures_at == naive_late
+    with pytest.raises(ValueError, match="timezone"):
+        PredictionPoint(predicted_at=naive_early, matures_at=naive_late, value=1)
 
 
 def test_hash_sempre_funciona_independente_de_metadata_ou_value_serem_dict():

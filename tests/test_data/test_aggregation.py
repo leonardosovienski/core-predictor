@@ -1,12 +1,12 @@
 """aggregation — fusão multi-fonte e TWAP (puros, determinísticos)."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from predictor_core.data.aggregation import consensus_median, consensus_mean, twap
 from predictor_core.data.contracts import MarketDataPoint
 
-T0 = datetime(2026, 7, 3, 0, 0, 0)
+T0 = datetime(2026, 7, 3, 0, 0, 0, tzinfo=timezone.utc)
 
 
 def _p(ts, close, pub=None, src="x"):
