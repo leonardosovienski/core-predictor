@@ -27,8 +27,11 @@ Rumo à **v1.0.0** (plataforma pronta para produção) conforme
   1.3.3 e quebrava em 3 testes assim que a 2.0.1 chegava.
 
   A serialização de `frozenset` usa `sorted()` para manter a linha
-  determinística, caindo para `list()` quando os elementos não são comparáveis
-  entre si.
+  determinística. Para conjuntos de tipos não comparáveis entre si (ex.:
+  `{1, "a"}`) o fallback é `sorted(key=repr)`, NÃO `list()`: a ordem de
+  iteração de um frozenset depende do hash e varia com o `PYTHONHASHSEED`, o
+  que faria a MESMA entrada gerar linhas diferentes entre execuções — num
+  ledger de proveniência, inaceitável.
 
 ## [2.0.1-ga-20260731] — PATCH: `_ALLOWED_EXTRA` aceita os campos de veredito já em uso
 

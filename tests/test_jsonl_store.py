@@ -72,3 +72,15 @@ def test_append_ainda_rejeita_objeto_realmente_nao_serializavel(tmp_path):
     with pytest.raises(TypeError):
         store.append({"bad": object()})
     assert not store.path.exists()
+
+
+def test_append_de_frozenset_heterogeneo_e_deterministico(tmp_path):
+    """`list(frozenset)` ordena pelo HASH — varia com o PYTHONHASHSEED e faria
+    a MESMA entrada gerar linhas diferentes entre execuções. O ledger é a
+    memória da governança: a linha precisa ser reproduzível."""
+    store = JsonlStore(tmp_path / "s.jsonl")
+    store.append({"misto": frozenset({1, "a", "b", 2})})
+    # Ordem por repr: "'a'"/"'b'" (aspa, ASCII 39) vêm antes de "1"/"2". O
+    # valor exato importa menos que ser SEMPRE o mesmo — rodar a suíte com
+    # PYTHONHASHSEED variado não pode mudar esta linha.
+    assert list(store) == [{"misto": ["a", "b", 1, 2]}]
