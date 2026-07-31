@@ -2,7 +2,16 @@ name: CD - Sync Core to Consumers
 
 on:
   release:
-    types: [published] # O gatilho: só roda quando você publica uma release
+    types: [published] # O gatilho original: roda quando você publica uma release
+  # A 2.0.0 nunca chegou aos consumidores: nenhuma release foi publicada para
+  # ela, então o único gatilho existente jamais disparou e o vendor dos
+  # domínios ficou parado na 1.3.3 sem nenhum sinal de erro. Um bump de VERSION
+  # na main agora propaga por si só, e o dispatch manual permite forçar o sync.
+  push:
+    branches: [main]
+    paths:
+      - VERSION
+  workflow_dispatch: {}
 
 jobs:
   distribute:
@@ -16,7 +25,7 @@ jobs:
         with:
           path: predictor_core
 
-      # 2. Baixamos o repositório CONSUMIDOR (Exemplo: cs-predictor)
+      # 2. Baixamos os repositórios CONSUMIDORES
       # ATENÇÃO: Repita este bloco para os outros repositórios consumidores se houver
       - name: Checkout do cs-predictor
         uses: actions/checkout@v7
@@ -24,6 +33,20 @@ jobs:
           repository: leonardosovienski/cs-predictor
           token: ${{ secrets.SYNC_PAT_TOKEN }}
           path: cs-predictor
+
+      - name: Checkout do cripto-predictor
+        uses: actions/checkout@v7
+        with:
+          repository: leonardosovienski/cripto-predictor
+          token: ${{ secrets.SYNC_PAT_TOKEN }}
+          path: cripto-predictor
+
+      - name: Checkout do brasileirao-predictor
+        uses: actions/checkout@v7
+        with:
+          repository: leonardosovienski/brasileirao-predictor
+          token: ${{ secrets.SYNC_PAT_TOKEN }}
+          path: brasileirao-predictor
 
       - name: Configurar Python
         uses: actions/setup-python@v7
@@ -47,10 +70,36 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
+
           # Adiciona a pasta de vendor (o manifesto já está salvo lá dentro)
           git add vendor/predictor_core/
-          
+
           # Só commita se houver mudanças, evitando erros se o sync não mudou nada
-          git diff --quiet && git diff --staged --quiet || git commit -m "chore(core): auto-sync com core-predictor ${{ github.event.release.tag_name }}"
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore(core): auto-sync com core-predictor ${{ github.event.release.tag_name || github.sha }}"
+          git push
+
+      - name: Commitar alterações no cripto-predictor
+        working-directory: ./cripto-predictor
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Adiciona a pasta de vendor (o manifesto já está salvo lá dentro)
+          git add vendor/predictor_core/
+
+          # Só commita se houver mudanças, evitando erros se o sync não mudou nada
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore(core): auto-sync com core-predictor ${{ github.event.release.tag_name || github.sha }}"
+          git push
+
+      - name: Commitar alterações no brasileirao-predictor
+        working-directory: ./brasileirao-predictor
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Adiciona a pasta de vendor (o manifesto já está salvo lá dentro)
+          git add vendor/predictor_core/
+
+          # Só commita se houver mudanças, evitando erros se o sync não mudou nada
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore(core): auto-sync com core-predictor ${{ github.event.release.tag_name || github.sha }}"
           git push

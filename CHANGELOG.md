@@ -8,6 +8,34 @@ MAJOR + shim de deprecação por ≥1 ciclo MINOR.
 Rumo à **v1.0.0** (plataforma pronta para produção) conforme
 `docs/DESIGN_V1.md` — implementação por ondas (0→5). **v1.0.0 alcançada na Onda 5.**
 
+## [2.0.1-ga-20260731] — PATCH: `_ALLOWED_EXTRA` aceita os campos de veredito já em uso
+
+### Corrigido
+- `measurement/trials.py`: `_ALLOWED_EXTRA` passa a incluir `status`,
+  `rps_dixon`, `rps_elo_baseline` e `delta_rps_ci95`. A 2.0.0 fez o
+  `TrialRegistry` rejeitar campos desconhecidos (`validate_trials` reprova o
+  que não está no schema), mas o conjunto permitido nunca foi estendido para
+  os campos de veredito que uma trial real já gravava — a
+  `H4_DIXON_COLES_CALIBRATED` do `brasileirao-predictor`
+  (`data/trials.json`) usa os quatro. Como `_register_trial_locked` valida a
+  lista INTEIRA antes de gravar, essa entrada legada bloquearia o registro de
+  **qualquer** trial nova no domínio assim que a 2.0.0 chegasse lá — falha em
+  cascata sobre o denominador do DSR, que é justamente a memória que a
+  governança N+1 existe para preservar.
+
+### Notas de propagação
+- A 2.0.0 **nunca foi propagada** aos consumidores: `cripto-predictor` e
+  `brasileirao-predictor` seguiam com `vendor/predictor_core/` na
+  `1.3.3-ga-20260723`. O `cd-sync.yml` só disparava em `release: published` e
+  só sincronizava o `cs-predictor`; como nenhuma release foi publicada para a
+  2.0.0, o sync jamais rodou e o drift passou despercebido. Corrigido nesta
+  versão (ver `.github/workflows/cd-sync.yml`): os dois domínios entram no
+  workflow e os gatilhos passam a incluir `push` em `VERSION` na `main` e
+  `workflow_dispatch`.
+- Efeito colateral feliz: por nunca ter sido sincronizada, a 2.0.0 não chegou a
+  quebrar o registro de trials do `brasileirao-predictor` em produção. Esta
+  2.0.1 é a primeira versão da linha 2.x que pode ser propagada com segurança.
+
 ## [2.0.0-ga-20260729] — robustez operacional e governança vinculada
 
 ### Corrigido
