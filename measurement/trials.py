@@ -47,7 +47,8 @@ from predictor_core.measurement.stats import probabilistic_sharpe_ratio
 
 _EULER = 0.5772156649015329  # γ de Euler–Mascheroni
 _DEFAULT_PATH = Path("trials.json")
-_ALLOWED_EXTRA = {"features_used", "train_period", "test_period"}
+_ALLOWED_EXTRA = {"features_used", "train_period", "test_period",
+                  "status", "rps_dixon", "rps_elo_baseline", "delta_rps_ci95"}
 _TRIAL_FIELDS = {"name", "registered_at", "params", "sharpe", "notes", "metric", *_ALLOWED_EXTRA}
 
 

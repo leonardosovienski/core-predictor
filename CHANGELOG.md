@@ -8,6 +8,56 @@ MAJOR + shim de deprecação por ≥1 ciclo MINOR.
 Rumo à **v1.0.0** (plataforma pronta para produção) conforme
 `docs/DESIGN_V1.md` — implementação por ondas (0→5). **v1.0.0 alcançada na Onda 5.**
 
+## [2.0.1-ga-20260731] — PATCH: dois defeitos da 2.0.0 que só apareceriam ao propagar
+
+A 2.0.0 nunca chegou a nenhum consumidor (ver "Notas de propagação" abaixo).
+Estes dois defeitos estavam nela e só se manifestariam no primeiro sync — por
+isso saem juntos, num único PATCH, em vez de virarem versões separadas de uma
+linha que ninguém chegou a usar.
+
+### Corrigido
+- `measurement/trials.py`: `_ALLOWED_EXTRA` passa a incluir `status`,
+  `rps_dixon`, `rps_elo_baseline` e `delta_rps_ci95`. A 2.0.0 fez o
+  `TrialRegistry` rejeitar campos desconhecidos (`validate_trials` reprova o
+  que não está no schema), mas o conjunto permitido nunca foi estendido para
+  os campos de veredito que uma trial real já gravava — a
+  `H4_DIXON_COLES_CALIBRATED` do `brasileirao-predictor`
+  (`data/trials.json`) usa os quatro. Como `_register_trial_locked` valida a
+  lista INTEIRA antes de gravar, essa entrada legada bloquearia o registro de
+  **qualquer** trial nova no domínio assim que a 2.0.0 chegasse lá — falha em
+  cascata sobre o denominador do DSR, que é justamente a memória que a
+  governança N+1 existe para preservar.
+
+- `kernel/jsonl_store.py`: `append` passa um `default=` ao `json.dumps` que
+  reduz `MappingProxyType` a dict e `frozenset` a lista. A 2.0.0 fez
+  `data/contracts.py::_freeze` congelar os campos dos contratos
+  recursivamente (dict → `MappingProxyType`, list/tuple → tuple, set →
+  `frozenset`), mas o `JsonlStore` — gravador do próprio core — só sabia
+  serializar o que o json conhece. Das três formas congeladas, apenas `tuple`
+  sobrevivia; gravar um `PredictionPoint.value` estourava
+  `TypeError: Object of type mappingproxy is not JSON serializable`.
+
+  Duas APIs do core que existem para compor deixaram de compor: o consumidor
+  monta o `PredictionPoint` e entrega `point.value` ao `JsonlStore` — o uso
+  idiomático — e quebrava sem ter feito nada errado. Detectado no
+  `lol-predictor` (`scripts/predict_ewc_opening.py`), cuja suíte passava
+  inteira na 1.3.3 e perdia 3 testes assim que a 2.x chegava.
+
+  A ordenação de conjuntos é ESTÁVEL: `sorted` normal e, para tipos não
+  comparáveis entre si (ex.: `{1, "a"}`), desempate por `repr`. `list(frozenset)`
+  seguiria a ordem de iteração do set, que vem do hash e varia com o
+  `PYTHONHASHSEED` — a MESMA entrada geraria linhas diferentes entre execuções,
+  inaceitável num ledger de proveniência.
+
+### Adicionado
+- `contracts.to_jsonable` (implementado em `kernel/jsonable.py`): caminho
+  público e sancionado para desfazer o congelamento ao entregar um campo de
+  contrato a `json.dumps` FORA do `JsonlStore`. O store resolve o caso
+  internamente, mas só para si; sem esta API, cada consumidor inventaria a
+  própria conversão — e implementação duplicada da mesma regra foi a origem do
+  drift que esta plataforma acabou de pagar para descobrir. `stable_sorted` é
+  compartilhada pelos dois caminhos justamente para não divergirem.
+
 ## [2.0.0-ga-20260729] — robustez operacional e governança vinculada
 
 ### Corrigido
