@@ -8,6 +8,28 @@ MAJOR + shim de deprecação por ≥1 ciclo MINOR.
 Rumo à **v1.0.0** (plataforma pronta para produção) conforme
 `docs/DESIGN_V1.md` — implementação por ondas (0→5). **v1.0.0 alcançada na Onda 5.**
 
+## [2.0.2-ga-20260731] — PATCH: `JsonlStore.append` serializa os containers congelados
+
+### Corrigido
+- `kernel/jsonl_store.py`: `append` passa um `default=` ao `json.dumps` que
+  reduz `MappingProxyType` a dict e `frozenset` a lista. A 2.0.0 fez
+  `data/contracts.py::_freeze` congelar os campos dos contratos
+  recursivamente (dict → `MappingProxyType`, list/tuple → tuple, set →
+  `frozenset`), mas o `JsonlStore` — gravador do próprio core — só sabia
+  serializar o que o json conhece. Das três formas congeladas, apenas `tuple`
+  sobrevivia; gravar um `PredictionPoint.value` estourava
+  `TypeError: Object of type mappingproxy is not JSON serializable`.
+
+  Duas APIs do core que existem para compor deixaram de compor: o consumidor
+  monta o `PredictionPoint` e entrega `point.value` ao `JsonlStore` — o uso
+  idiomático — e quebrava sem ter feito nada errado. Detectado no
+  `lol-predictor` (`scripts/predict_ewc_opening.py`), cuja suíte passava na
+  1.3.3 e quebrava em 3 testes assim que a 2.0.1 chegava.
+
+  A serialização de `frozenset` usa `sorted()` para manter a linha
+  determinística, caindo para `list()` quando os elementos não são comparáveis
+  entre si.
+
 ## [2.0.1-ga-20260731] — PATCH: `_ALLOWED_EXTRA` aceita os campos de veredito já em uso
 
 ### Corrigido

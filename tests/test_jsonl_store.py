@@ -43,3 +43,32 @@ def test_append_rejeita_nan_antes_de_abrir_o_arquivo(tmp_path):
     with pytest.raises(ValueError):
         store.append({"x": float("nan")})
     assert not (tmp_path / "s.jsonl").exists()
+
+
+def test_append_serializa_containers_congelados_do_core(tmp_path):
+    """Os contratos do core congelam seus campos (data.contracts._freeze):
+    dict vira MappingProxyType, list/tuple viram tuple e set vira frozenset.
+    O JsonlStore é o gravador do PRÓPRIO core — gravar um campo congelado
+    (ex.: PredictionPoint.value) precisa funcionar, senão duas APIs que
+    existem para compor não compõem."""
+    from predictor_core.data.contracts import _freeze
+
+    store = JsonlStore(tmp_path / "frozen.jsonl")
+    congelado = _freeze({"probability_a": 0.4856, "favorite": "Gen.G",
+                         "tags": ["a", "b"], "aninhado": {"k": [1, 2]}})
+    store.append({"value": congelado, "conjunto": frozenset({"b", "a"})})
+
+    assert list(store) == [{
+        "value": {"probability_a": 0.4856, "favorite": "Gen.G",
+                  "tags": ["a", "b"], "aninhado": {"k": [1, 2]}},
+        "conjunto": ["a", "b"],  # frozenset é ordenado para a linha ser determinística
+    }]
+
+
+def test_append_ainda_rejeita_objeto_realmente_nao_serializavel(tmp_path):
+    """O `default=` cobre só os containers imutáveis do core; qualquer outro
+    tipo continua falhando ANTES de abrir o arquivo."""
+    store = JsonlStore(tmp_path / "e.jsonl")
+    with pytest.raises(TypeError):
+        store.append({"bad": object()})
+    assert not store.path.exists()

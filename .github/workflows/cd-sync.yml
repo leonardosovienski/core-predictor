@@ -48,6 +48,20 @@ jobs:
           token: ${{ secrets.SYNC_PAT_TOKEN }}
           path: brasileirao-predictor
 
+      - name: Checkout do lol-predictor
+        uses: actions/checkout@v7
+        with:
+          repository: leonardosovienski/lol-predictor
+          token: ${{ secrets.SYNC_PAT_TOKEN }}
+          path: lol-predictor
+
+      - name: Checkout do f1-predictor
+        uses: actions/checkout@v7
+        with:
+          repository: leonardosovienski/f1-predictor
+          token: ${{ secrets.SYNC_PAT_TOKEN }}
+          path: f1-predictor
+
       - name: Configurar Python
         uses: actions/setup-python@v7
         with:
@@ -93,6 +107,32 @@ jobs:
 
       - name: Commitar alterações no brasileirao-predictor
         working-directory: ./brasileirao-predictor
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Adiciona a pasta de vendor (o manifesto já está salvo lá dentro)
+          git add vendor/predictor_core/
+
+          # Só commita se houver mudanças, evitando erros se o sync não mudou nada
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore(core): auto-sync com core-predictor ${{ github.event.release.tag_name || github.sha }}"
+          git push
+
+      - name: Commitar alterações no lol-predictor
+        working-directory: ./lol-predictor
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Adiciona a pasta de vendor (o manifesto já está salvo lá dentro)
+          git add vendor/predictor_core/
+
+          # Só commita se houver mudanças, evitando erros se o sync não mudou nada
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore(core): auto-sync com core-predictor ${{ github.event.release.tag_name || github.sha }}"
+          git push
+
+      - name: Commitar alterações no f1-predictor
+        working-directory: ./f1-predictor
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
