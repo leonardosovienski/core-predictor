@@ -8,6 +8,26 @@ MAJOR + shim de deprecação por ≥1 ciclo MINOR.
 Rumo à **v1.0.0** (plataforma pronta para produção) conforme
 `docs/DESIGN_V1.md` — implementação por ondas (0→5). **v1.0.0 alcançada na Onda 5.**
 
+## [2.1.0-ga-20260801] — MINOR: limite aberto (None) em train_period/test_period
+
+### Adicionado
+- `measurement/trials.py::validate_trials`: um dos dois lados de
+  `train_period`/`test_period` agora pode ser `None` — limite aberto de uma
+  coorte prospectiva que ainda não terminou de coletar, ou de uma
+  retrospectiva sem início definido. `[None, None]` continua rejeitado (não
+  declara período nenhum). Mudança aditiva: todo `trials.json` que já
+  validava continua validando.
+
+  Motivado pelo `lol-predictor`: a coorte prospectiva
+  `h4-lol-market-shadow-prospectivo-v2` foi reaberta por decisão humana em
+  2026-07-25 e segue coletando sem data de fim — o schema anterior exigia
+  `str` nos dois lados e não tinha como representar "ainda não terminou"
+  sem inventar uma data falsa. As outras duas entradas do mesmo domínio que
+  usavam `None` (`h4-lol-market-shadow-prospectivo` e
+  `h4r-lol-polymarket-retrospectivo`) tinham datas reais já registradas em
+  artefatos versionados do próprio domínio e foram corrigidas lá, não aqui —
+  este afrouxamento cobre só o caso genuinamente sem data.
+
 ## [2.0.1-ga-20260731] — PATCH: dois defeitos da 2.0.0 que só apareceriam ao propagar
 
 A 2.0.0 nunca chegou a nenhum consumidor (ver "Notas de propagação" abaixo).
