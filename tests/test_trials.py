@@ -70,6 +70,30 @@ def test_campos_opcionais_do_schema(tmp_path):
     assert validate_trials(load_trials(p)) == []
 
 
+@pytest.mark.parametrize("key", ["train_period", "test_period"])
+@pytest.mark.parametrize("periodo", [
+    ["2026-07-20T00:00:00Z", None],   # coorte prospectiva sem fim
+    [None, "2026-07-20T00:00:00Z"],   # coorte retrospectiva sem início
+])
+def test_periodo_com_um_lado_none_e_aceito(key, periodo, tmp_path):
+    """Regressão 2026-08-01: limite aberto (None) num dos lados de train/test_period
+    é a representação honesta de uma coorte prospectiva ainda em coleta ou de uma
+    retrospectiva sem início definido — não um dado ausente/inválido."""
+    p = tmp_path / "trials.json"
+    register_trial("t-a", params={"h": 7}, path=p, **{key: periodo}, **_NOGATE)
+    t = load_trials(p)[0]
+    assert t[key] == periodo
+    assert validate_trials(load_trials(p)) == []
+
+
+@pytest.mark.parametrize("key", ["train_period", "test_period"])
+def test_periodo_com_os_dois_lados_none_e_rejeitado(key):
+    """[None, None] não declara período nenhum — não é limite aberto, é ausência."""
+    trial = {"name": "t1", "registered_at": "2026-07-07T00:00:00Z",
+             "params": {"a": 1}, "sharpe": None, "notes": "", key: [None, None]}
+    assert any(f"{key} inválido" in e for e in validate_trials([trial]))
+
+
 def test_extra_desconhecido_e_rejeitado_antes_de_persistir(tmp_path):
     with pytest.raises(ValueError, match="campos extras"):
         register_trial("t-a", params={"h": 7}, path=tmp_path / "trials.json",
