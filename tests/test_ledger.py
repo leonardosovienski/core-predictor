@@ -1,17 +1,25 @@
 """ledger — partida dobrada: toda transação soma zero, saldos são exatos."""
-from datetime import datetime, timezone
+
+from datetime import UTC, datetime
 
 import pytest
 
-from predictor_core.measurement.ledger import Ledger, Posting, Transaction, UnbalancedTransactionError
+from predictor_core.measurement.ledger import (
+    Ledger,
+    Posting,
+    Transaction,
+    UnbalancedTransactionError,
+)
 
 
 def _now():
-    return datetime(2026, 7, 11, tzinfo=timezone.utc)
+    return datetime(2026, 7, 11, tzinfo=UTC)
 
 
 def test_balanced_transaction_ok():
-    txn = Transaction(at=_now(), postings=(Posting("assets:btc", 10.0), Posting("equity:pnl", -10.0)))
+    txn = Transaction(
+        at=_now(), postings=(Posting("assets:btc", 10.0), Posting("equity:pnl", -10.0))
+    )
     assert txn.postings[0].amount == 10.0
 
 
@@ -27,7 +35,9 @@ def test_single_posting_raises():
 
 def test_ledger_post_and_balance():
     ledger = Ledger()
-    ledger.post(_now(), [Posting("assets:btc", 10.0), Posting("equity:pnl", -10.0)], narration="stake")
+    ledger.post(
+        _now(), [Posting("assets:btc", 10.0), Posting("equity:pnl", -10.0)], narration="stake"
+    )
     ledger.post(_now(), [Posting("assets:btc", -3.0), Posting("equity:pnl", 3.0)], narration="loss")
     assert ledger.balance("assets:btc") == pytest.approx(7.0)
     assert ledger.balance("equity:pnl") == pytest.approx(-7.0)
@@ -57,16 +67,18 @@ def test_transacao_grande_legitimamente_balanceada_e_aceita():
     """Regressão: tolerância absoluta 1e-9 reprovava soma matematicamente zero
     em magnitude 1e15 (resíduo float ~0.025)."""
     led = Ledger()
-    led.post(datetime(2026, 1, 1, tzinfo=timezone.utc),
-             [Posting("a", 1e15 + 0.1), Posting("b", -1e15), Posting("c", -0.1)])
+    led.post(
+        datetime(2026, 1, 1, tzinfo=UTC),
+        [Posting("a", 1e15 + 0.1), Posting("b", -1e15), Posting("c", -0.1)],
+    )
     assert len(led.transactions) == 1
 
 
 def test_erro_de_digitacao_continua_barrado_em_qualquer_escala():
     led = Ledger()
     with pytest.raises(UnbalancedTransactionError):
-        led.post(datetime(2026, 1, 1, tzinfo=timezone.utc),
-                 [Posting("a", 100.0), Posting("b", -100.01)])
+        led.post(datetime(2026, 1, 1, tzinfo=UTC), [Posting("a", 100.0), Posting("b", -100.01)])
     with pytest.raises(UnbalancedTransactionError):
-        led.post(datetime(2026, 1, 1, tzinfo=timezone.utc),
-                 [Posting("a", 1e15), Posting("b", -1e15 + 5000.0)])
+        led.post(
+            datetime(2026, 1, 1, tzinfo=UTC), [Posting("a", 1e15), Posting("b", -1e15 + 5000.0)]
+        )

@@ -1,25 +1,29 @@
 """PredictionPoint — contrato do ciclo previsão → maturação → resultado."""
-from datetime import datetime, timedelta, timezone
+
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
 from predictor_core.data.contracts import PredictionPoint
 
-_T0 = datetime(2026, 7, 9, 12, 0, tzinfo=timezone.utc)
+_T0 = datetime(2026, 7, 9, 12, 0, tzinfo=UTC)
 
 
 def test_ciclo_basico():
-    pp = PredictionPoint(predicted_at=_T0, matures_at=_T0 + timedelta(days=7),
-                         value=0.62, metadata={"asset": "BTCUSDT"})
+    pp = PredictionPoint(
+        predicted_at=_T0,
+        matures_at=_T0 + timedelta(days=7),
+        value=0.62,
+        metadata={"asset": "BTCUSDT"},
+    )
     assert not pp.is_mature(_T0 + timedelta(days=6))
-    assert pp.is_mature(_T0 + timedelta(days=7))          # fronteira inclusiva
+    assert pp.is_mature(_T0 + timedelta(days=7))  # fronteira inclusiva
     assert pp.metadata["asset"] == "BTCUSDT"
 
 
 def test_maturacao_antes_da_emissao_e_lookahead():
     with pytest.raises(ValueError, match="lookahead"):
-        PredictionPoint(predicted_at=_T0, matures_at=_T0 - timedelta(seconds=1),
-                        value=1.0)
+        PredictionPoint(predicted_at=_T0, matures_at=_T0 - timedelta(seconds=1), value=1.0)
 
 
 def test_imutavel():
@@ -92,11 +96,12 @@ def test_hash_sempre_funciona_independente_de_metadata_ou_value_serem_dict():
     # Regressão: o __hash__ auto-gerado incluía metadata/value, então
     # hash(pp) funcionava ou lançava TypeError dependendo do CONTEÚDO em
     # runtime — comportamento inconsistente. Agora é sempre hasheável.
-    com_dict_metadata = PredictionPoint(predicted_at=_T0, matures_at=_T0, value=1,
-                                        metadata={"asset": "BTCUSDT"})
+    com_dict_metadata = PredictionPoint(
+        predicted_at=_T0, matures_at=_T0, value=1, metadata={"asset": "BTCUSDT"}
+    )
     com_dict_value = PredictionPoint(predicted_at=_T0, matures_at=_T0, value=[1, 2, 3])
     hash(com_dict_metadata)  # não levanta
-    hash(com_dict_value)     # não levanta
+    hash(com_dict_value)  # não levanta
     assert {com_dict_metadata, com_dict_value}  # usável em set
 
 

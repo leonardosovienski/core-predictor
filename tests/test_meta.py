@@ -1,9 +1,10 @@
 """meta — fingerprint de artefato: contrato que falha explícito na incompatibilidade."""
+
 import warnings
 
 import pytest
 
-from predictor_core.kernel.meta import fingerprint, validate, StaleModelError
+from predictor_core.kernel.meta import StaleModelError, fingerprint, validate
 
 
 def test_fingerprint_deterministic():
@@ -24,12 +25,12 @@ def test_fingerprint_params_change_detected():
 
 def test_validate_ok_when_equal():
     fp = fingerprint(2, ("a", "b"), {"k": 3})
-    assert validate(fp, fp) is None   # não levanta
+    assert validate(fp, fp) is None  # não levanta
 
 
 def test_validate_raises_on_mismatch():
     saved = fingerprint(1, ("a",), {})
-    current = fingerprint(2, ("a",), {})   # schema mudou
+    current = fingerprint(2, ("a",), {})  # schema mudou
     with pytest.raises(StaleModelError):
         validate(saved, current)
 

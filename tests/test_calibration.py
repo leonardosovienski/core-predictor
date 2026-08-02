@@ -1,4 +1,5 @@
 """measurement.calibration — Platt corrige miscalibração conhecida; Shin remove vig."""
+
 import random
 
 import pytest
@@ -9,6 +10,7 @@ from predictor_core.measurement.metrics import log_loss
 
 def _sigmoid(x):
     import math
+
     return 1.0 / (1.0 + math.exp(-x))
 
 
@@ -18,6 +20,7 @@ def test_platt_improves_overconfident_predictor():
     p_true = [rng.uniform(0.2, 0.8) for _ in range(400)]
     outcomes = [1 if rng.random() < p else 0 for p in p_true]
     import math
+
     overconfident = [_sigmoid(3.0 * math.log(p / (1 - p))) for p in p_true]
 
     cal = PlattCalibrator().fit(overconfident, outcomes)

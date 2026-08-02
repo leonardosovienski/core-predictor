@@ -20,8 +20,7 @@ Este documento não é vendorizado. O `CORE_MANIFEST.json` é gerado somente pel
 no vendor. Após revisão coordenada de cada consumidor, execute a partir do core:
 
 ```powershell
-python sync_core.py --check
-python sync_core.py --write --target brasileirao-predictor
+python sync_core.py --audit
 ```
 
 Repita explicitamente para `lol-predictor`, `cs-predictor` e `f1-predictor`.

@@ -1,13 +1,14 @@
 """secrets — o guard pega credencial plantada e passa em texto limpo (controle positivo)."""
+
 import pytest
 
-from predictor_core.testing.secrets import find_secrets, assert_no_secrets_in_events
+from predictor_core.testing.secrets import assert_no_secrets_in_events, find_secrets
 
 
 def test_catches_known_prefixes():
-    assert find_secrets("token=sk-ABCDEFGHIJKLMNOPQRSTUVWXYZ012345")   # OpenAI
-    assert find_secrets("key AIza" + "B" * 35)                          # Gemini
-    assert find_secrets("Authorization: Bearer abcdef0123456789abcdef") # Bearer
+    assert find_secrets("token=sk-ABCDEFGHIJKLMNOPQRSTUVWXYZ012345")  # OpenAI
+    assert find_secrets("key AIza" + "B" * 35)  # Gemini
+    assert find_secrets("Authorization: Bearer abcdef0123456789abcdef")  # Bearer
 
 
 def test_clean_text_has_no_hits():
@@ -25,12 +26,13 @@ def test_short_known_value_is_ignored():
 
 
 def test_absent_file_is_noop(tmp_path):
-    assert_no_secrets_in_events(tmp_path / "missing.jsonl")   # não levanta
+    assert_no_secrets_in_events(tmp_path / "missing.jsonl")  # não levanta
 
 
 def test_raises_on_leaked_secret(tmp_path):
     f = tmp_path / "events.jsonl"
-    f.write_text('{"metadata": {"resp": "sk-ABCDEFGHIJKLMNOPQRSTUVWXYZ012345"}}\n',
-                 encoding="utf-8")
+    f.write_text(
+        '{"metadata": {"resp": "sk-ABCDEFGHIJKLMNOPQRSTUVWXYZ012345"}}\n', encoding="utf-8"
+    )
     with pytest.raises(AssertionError):
         assert_no_secrets_in_events(f)

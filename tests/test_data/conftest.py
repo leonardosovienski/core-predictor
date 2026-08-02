@@ -1,5 +1,6 @@
 """Redireciona a telemetria JSONL para um arquivo temporário durante os testes de data/
 (o CircuitBreaker e os routers emitem eventos; sem isso escreveriam ./events.jsonl no cwd)."""
+
 import pytest
 
 

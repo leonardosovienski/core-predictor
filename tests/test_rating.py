@@ -1,7 +1,8 @@
 """kernel.rating — EloEngine generalizado: expectativa simétrica, soma-zero, ranking multi-N."""
+
 import pytest
 
-from predictor_core.kernel.rating import Entity, RatingBook, expected_score, update_pair
+from predictor_core.kernel.rating import RatingBook, expected_score, update_pair
 
 
 def test_expected_score_symmetric():

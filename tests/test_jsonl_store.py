@@ -1,4 +1,5 @@
 """kernel.jsonl_store — append-only, streaming, corrupção explícita."""
+
 import pytest
 
 from predictor_core.kernel.jsonl_store import JsonlStore
@@ -54,15 +55,27 @@ def test_append_serializa_containers_congelados_do_core(tmp_path):
     from predictor_core.data.contracts import _freeze
 
     store = JsonlStore(tmp_path / "frozen.jsonl")
-    congelado = _freeze({"probability_a": 0.4856, "favorite": "Gen.G",
-                         "tags": ["a", "b"], "aninhado": {"k": [1, 2]}})
+    congelado = _freeze(
+        {
+            "probability_a": 0.4856,
+            "favorite": "Gen.G",
+            "tags": ["a", "b"],
+            "aninhado": {"k": [1, 2]},
+        }
+    )
     store.append({"value": congelado, "conjunto": frozenset({"b", "a"})})
 
-    assert list(store) == [{
-        "value": {"probability_a": 0.4856, "favorite": "Gen.G",
-                  "tags": ["a", "b"], "aninhado": {"k": [1, 2]}},
-        "conjunto": ["a", "b"],  # frozenset é ordenado para a linha ser determinística
-    }]
+    assert list(store) == [
+        {
+            "value": {
+                "probability_a": 0.4856,
+                "favorite": "Gen.G",
+                "tags": ["a", "b"],
+                "aninhado": {"k": [1, 2]},
+            },
+            "conjunto": ["a", "b"],  # frozenset é ordenado para a linha ser determinística
+        }
+    ]
 
 
 def test_append_ainda_rejeita_objeto_realmente_nao_serializavel(tmp_path):
