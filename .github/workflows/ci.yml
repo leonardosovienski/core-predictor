@@ -13,6 +13,7 @@ jobs:
   test:
     name: Python ${{ matrix.python }}${{ matrix.experimental && ' (experimental)' || '' }}
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
@@ -31,13 +32,13 @@ jobs:
         run: uv sync --frozen --python ${{ matrix.python }} --group dev --extra http --extra scraping
       - name: Test
         run: |
-          uv run --frozen coverage erase
-          uv run --frozen coverage run --source=src/predictor_core -m pytest -q
-          uv run --frozen coverage report --fail-under=80
+          uv run --no-sync coverage erase
+          uv run --no-sync coverage run --source=src/predictor_core -m pytest -q
+          uv run --no-sync coverage report --fail-under=80
       - name: Lint and format
-        run: uv run --frozen ruff check . && uv run --frozen ruff format --check .
+        run: uv run --no-sync ruff check . && uv run --no-sync ruff format --check .
       - name: Type check
-        run: uv run --frozen pyright
+        run: uv run --no-sync pyright
 
   wheel:
     name: Build and test wheel outside checkout
