@@ -1,8 +1,9 @@
 """harness — controle positivo: um veredito só vale se o pipeline tem poder."""
+
 import pytest
 
 from predictor_core.measurement.bootstrap import bootstrap_ci
-from predictor_core.testing.harness import assert_pipeline_has_power, PipelineHasNoPowerError
+from predictor_core.testing.harness import PipelineHasNoPowerError, assert_pipeline_has_power
 from predictor_core.testing.synth import ar1_series
 
 

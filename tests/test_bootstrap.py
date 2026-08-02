@@ -1,4 +1,5 @@
 """bootstrap — família unificada: schemes, guards e a invariância do cluster."""
+
 import math
 
 import pytest
@@ -12,27 +13,31 @@ def _mean(u):
 
 # --- schemes básicos --------------------------------------------------------
 
+
 def test_iid_brackets_mean():
-    data = [0.01 * i for i in range(-50, 51)]      # média ~0
+    data = [0.01 * i for i in range(-50, 51)]  # média ~0
     lo, hi, dist = bootstrap_ci(data, _mean, scheme="iid", n_boot=2000, seed=1)
     assert lo < sum(data) / len(data) < hi and len(dist) > 0
 
 
 def test_moving_brackets_mean_autocorrelated():
     series = [math.sin(i / 3.0) for i in range(120)]
-    lo, hi, dist = bootstrap_ci(series, _mean, scheme="moving",
-                                block_length=10, n_boot=1000, seed=7)
+    lo, hi, dist = bootstrap_ci(
+        series, _mean, scheme="moving", block_length=10, n_boot=1000, seed=7
+    )
     assert math.isfinite(lo) and math.isfinite(hi) and lo <= hi and dist
 
 
 def test_stationary_runs_and_brackets():
     series = [math.sin(i / 4.0) for i in range(120)]
-    lo, hi, _ = bootstrap_ci(series, _mean, scheme="stationary",
-                             block_length=8, n_boot=1000, seed=3)
+    lo, hi, _ = bootstrap_ci(
+        series, _mean, scheme="stationary", block_length=8, n_boot=1000, seed=3
+    )
     assert lo <= _mean(series) <= hi
 
 
 # --- guards ------------------------------------------------------------------
+
 
 def test_unknown_scheme_raises():
     with pytest.raises(ValueError):
@@ -50,12 +55,19 @@ def test_cluster_requires_key():
 
 
 def test_nonfinite_resamples_dropped():
-    lo, hi, dist = bootstrap_ci(list(range(60)), lambda u: float("inf"),
-                                scheme="moving", block_length=10, n_boot=200, seed=3)
+    lo, hi, dist = bootstrap_ci(
+        list(range(60)),
+        lambda u: float("inf"),
+        scheme="moving",
+        block_length=10,
+        n_boot=200,
+        seed=3,
+    )
     assert (lo, hi, dist) == (None, None, [])
 
 
 # --- invariância do cluster -------------------------------------------------
+
 
 def test_cluster_widens_ci_under_intra_cluster_correlation():
     """Unidades perfeitamente correlacionadas dentro do cluster: o bootstrap iid
@@ -67,8 +79,9 @@ def test_cluster_widens_ci_under_intra_cluster_correlation():
     series = [(v, k) for k, v in enumerate(cluster_vals) for _ in range(5)]
     stat = lambda u: sum(x[0] for x in u) / len(u)
     lo_i, hi_i, _ = bootstrap_ci(series, stat, scheme="iid", n_boot=3000, seed=11)
-    lo_c, hi_c, _ = bootstrap_ci(series, stat, scheme="cluster",
-                                 cluster_key=lambda x: x[1], n_boot=3000, seed=11)
+    lo_c, hi_c, _ = bootstrap_ci(
+        series, stat, scheme="cluster", cluster_key=lambda x: x[1], n_boot=3000, seed=11
+    )
     assert (hi_c - lo_c) > (hi_i - lo_i)
 
 
@@ -76,9 +89,14 @@ def test_cluster_singleton_brackets_mean():
     # 1 unidade por cluster: degenera no iid (estatisticamente) e cobre a média
     data = [0.01 * i for i in range(-40, 41)]
     series = [(v, i) for i, v in enumerate(data)]
-    lo, hi, _ = bootstrap_ci(series, lambda u: sum(x[0] for x in u) / len(u),
-                             scheme="cluster", cluster_key=lambda x: x[1],
-                             n_boot=2000, seed=5)
+    lo, hi, _ = bootstrap_ci(
+        series,
+        lambda u: sum(x[0] for x in u) / len(u),
+        scheme="cluster",
+        cluster_key=lambda x: x[1],
+        n_boot=2000,
+        seed=5,
+    )
     assert lo < sum(data) / len(data) < hi
 
 

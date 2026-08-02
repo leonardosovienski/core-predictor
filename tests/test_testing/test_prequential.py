@@ -1,4 +1,5 @@
 """testing.prequential — Template Method: fatiamento sem leakage, target blindado."""
+
 import pytest
 
 from predictor_core.testing.prequential import PrequentialEvaluator
@@ -53,7 +54,7 @@ def test_retrain_every_amortizes_training():
     ev = _MeanEvaluator()
     ev.run(_obs(10), min_history=2, retrain_every=4)
     assert len(ev.seen_histories) == 2  # treina em i=2 e i=6
-    assert len(ev.seen_features) == 8   # mas prevê todos os passos
+    assert len(ev.seen_features) == 8  # mas prevê todos os passos
 
 
 def test_missing_target_raises():
@@ -67,10 +68,13 @@ def test_missing_target_raises():
 def test_invalid_config_raises():
     with pytest.raises(ValueError):
         _MeanEvaluator().run(_obs(5), min_history=0)
+
     class NoTarget(PrequentialEvaluator):
         def __init__(self):
             super().__init__(target_key="")
+
         def train_step(self, h): ...
         def predict_step(self, f): ...
+
     with pytest.raises(ValueError):
         NoTarget()

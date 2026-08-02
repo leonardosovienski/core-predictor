@@ -1,15 +1,20 @@
 """metrics — régua probabilística: previsor perfeito=0, penalidade ordinal, DM."""
+
 import math
 
 import pytest
 
 from predictor_core.measurement.metrics import (
-    brier, log_loss, rps, calibration_table, diebold_mariano,
+    _t_two_sided_p,
+    brier,
+    calibration_table,
+    diebold_mariano,
+    log_loss,
+    rps,
 )
-from predictor_core.measurement.metrics import _t_two_sided_p
-
 
 # --- Brier ------------------------------------------------------------------
+
 
 def test_brier_perfect_is_zero():
     probs = [[1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]
@@ -24,6 +29,7 @@ def test_brier_uniform_three_classes():
 
 # --- log-loss ---------------------------------------------------------------
 
+
 def test_log_loss_perfect_near_zero():
     assert log_loss([[1.0, 0.0]], [0]) == pytest.approx(0.0, abs=1e-9)
 
@@ -35,6 +41,7 @@ def test_log_loss_penalizes_confident_wrong():
 
 
 # --- RPS (ordinal) ----------------------------------------------------------
+
 
 def test_rps_perfect_is_zero():
     assert rps([[1.0, 0.0, 0.0]], [0]) == pytest.approx(0.0)
@@ -55,6 +62,7 @@ def test_rps_requires_two_classes():
 
 # --- calibração -------------------------------------------------------------
 
+
 def test_calibration_well_calibrated():
     # metade com p=0.2 (20% acertam) e metade com p=0.8 (80% acertam)
     probs = [0.2] * 100 + [0.8] * 100
@@ -65,6 +73,7 @@ def test_calibration_well_calibrated():
 
 
 # --- Diebold-Mariano --------------------------------------------------------
+
 
 def test_dm_t_pvalue_matches_reference():
     # t=2.0, df=10 → p bilateral ≈ 0.0734 (tabela t de Student)
@@ -81,5 +90,5 @@ def test_dm_detects_better_forecaster():
 
 
 def test_dm_nan_on_zero_variance():
-    dm, p = diebold_mariano([0.1] * 10, [0.1] * 10)   # diferencial constante 0
+    dm, p = diebold_mariano([0.1] * 10, [0.1] * 10)  # diferencial constante 0
     assert math.isnan(dm) and math.isnan(p)

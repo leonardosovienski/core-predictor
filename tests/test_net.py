@@ -1,6 +1,7 @@
 """net — classificação transitório vs não-transitório (sem rede). Cota diária e 404
 NÃO se reententam; 5xx/429 e marcadores de mensagem sim."""
-import net
+
+from predictor_core import net
 
 
 class _HttpError(Exception):

@@ -1,5 +1,6 @@
 """kernel.timeindex — fronteira ISO/UTC: naive é erro, roundtrip é identidade."""
-from datetime import datetime, timedelta, timezone
+
+from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
@@ -22,14 +23,14 @@ def test_to_utc_rejects_naive():
 
 
 def test_iso_z_format_matches_trials_schema():
-    dt = datetime(2026, 7, 11, 12, 30, 45, tzinfo=timezone.utc)
+    dt = datetime(2026, 7, 11, 12, 30, 45, tzinfo=UTC)
     s = iso_z(dt)
     assert s == "2026-07-11T12:30:45Z"
     datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ")  # o formato que validate_trials exige
 
 
 def test_parse_iso_roundtrip():
-    dt = datetime(2026, 7, 11, 12, 30, 45, tzinfo=timezone.utc)
+    dt = datetime(2026, 7, 11, 12, 30, 45, tzinfo=UTC)
     assert parse_iso(iso_z(dt)) == dt
 
 

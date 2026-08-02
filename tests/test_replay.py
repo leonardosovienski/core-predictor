@@ -1,16 +1,17 @@
 """replay — anti-lookahead ESTRUTURAL: espiar o futuro deve ser impossível, não proibido."""
+
 import pytest
 
-import replay
+from predictor_core.measurement import replay
 
 
 def test_pastview_blocks_future_index():
     out = []
 
     def handler(past):
-        out.append(len(past))           # tamanho = asof+1 (só o passado visível)
+        out.append(len(past))  # tamanho = asof+1 (só o passado visível)
         with pytest.raises(replay.LookaheadError):
-            _ = past[past.asof_index + 1]   # espiar amanhã
+            _ = past[past.asof_index + 1]  # espiar amanhã
         return None
 
     replay.replay([10, 20, 30], handler)
@@ -32,12 +33,12 @@ def test_pastview_slice_clamps_to_past():
     seen = {}
 
     def handler(past):
-        seen[past.asof_index] = list(past[:])   # slice nunca vaza o futuro
+        seen[past.asof_index] = list(past[:])  # slice nunca vaza o futuro
         return past.latest
 
     ledger = replay.replay([1, 2, 3], handler)
     assert seen[0] == [1] and seen[1] == [1, 2] and seen[2] == [1, 2, 3]
-    assert ledger == [1, 2, 3]                  # decisões não-None na ordem temporal
+    assert ledger == [1, 2, 3]  # decisões não-None na ordem temporal
 
 
 def test_replay_drops_none_decisions():
@@ -46,7 +47,7 @@ def test_replay_drops_none_decisions():
 
 
 def test_replay_key_rejects_out_of_order():
-    events = [("2024-01-01", 1), ("2024-01-03", 2), ("2024-01-02", 3)]   # fora de ordem
+    events = [("2024-01-01", 1), ("2024-01-03", 2), ("2024-01-02", 3)]  # fora de ordem
     with pytest.raises(ValueError):
         replay.replay(events, lambda p: None, key=lambda e: e[0])
 

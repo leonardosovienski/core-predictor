@@ -1,18 +1,28 @@
 """aggregation — fusão multi-fonte e TWAP (puros, determinísticos)."""
-from datetime import datetime, timedelta, timezone
+
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from predictor_core.data.aggregation import consensus_median, consensus_mean, twap
+from predictor_core.data.aggregation import consensus_mean, consensus_median, twap
 from predictor_core.data.contracts import MarketDataPoint
 
-T0 = datetime(2026, 7, 3, 0, 0, 0, tzinfo=timezone.utc)
+T0 = datetime(2026, 7, 3, 0, 0, 0, tzinfo=UTC)
 
 
 def _p(ts, close, pub=None, src="x"):
-    return MarketDataPoint(symbol="btc", timestamp=ts, open=close, high=close + 1,
-                           low=close - 1, close=close, volume=10.0, source=src,
-                           interval="1d", published_at=pub or ts)
+    return MarketDataPoint(
+        symbol="btc",
+        timestamp=ts,
+        open=close,
+        high=close + 1,
+        low=close - 1,
+        close=close,
+        volume=10.0,
+        source=src,
+        interval="1d",
+        published_at=pub or ts,
+    )
 
 
 def test_consensus_median_fuses_per_timestamp():
@@ -20,7 +30,7 @@ def test_consensus_median_fuses_per_timestamp():
     b = [_p(T0, 102.0), _p(T0 + timedelta(days=1), 120.0)]
     c = [_p(T0, 104.0), _p(T0 + timedelta(days=1), 112.0)]
     fused = consensus_median([a, b, c])
-    assert [p.close for p in fused] == [102.0, 112.0]     # mediana ponto-a-ponto
+    assert [p.close for p in fused] == [102.0, 112.0]  # mediana ponto-a-ponto
     assert all(p.source == "consensus_median" for p in fused)
 
 

@@ -1,7 +1,12 @@
 """measurement.ordinal — Plackett-Luce: prob soma 1, MLE recupera ordem de força conhecida."""
+
 import pytest
 
-from predictor_core.measurement.ordinal import fit_plackett_luce, plackett_luce_prob, rank_probabilities
+from predictor_core.measurement.ordinal import (
+    fit_plackett_luce,
+    plackett_luce_prob,
+    rank_probabilities,
+)
 
 
 def test_plackett_luce_prob_basic():

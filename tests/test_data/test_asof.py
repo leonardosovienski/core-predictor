@@ -1,4 +1,5 @@
 """asof — reconstrução forward-only de estado ("o que eu sabia em t")."""
+
 from datetime import date, timedelta
 
 from predictor_core.data.asof import state_asof
@@ -9,17 +10,17 @@ def _count(prefix):
 
 
 # eventos (timestamp, payload) ordenados; usados por vários testes
-EVENTS = [(date(2020, 1, i), i) for i in range(1, 11)]   # 2020-01-01 .. 2020-01-10
+EVENTS = [(date(2020, 1, i), i) for i in range(1, 11)]  # 2020-01-01 .. 2020-01-10
 
 
 def test_prefix_is_strictly_before_date():
     out = state_asof(EVENTS, _count, [date(2020, 1, 5)])
-    assert out[date(2020, 1, 5)] == 4          # dias 1..4 (o dia 5 NÃO entra: forward-only)
+    assert out[date(2020, 1, 5)] == 4  # dias 1..4 (o dia 5 NÃO entra: forward-only)
 
 
 def test_inclusive_includes_the_date():
     out = state_asof(EVENTS, _count, [date(2020, 1, 5)], inclusive=True)
-    assert out[date(2020, 1, 5)] == 5          # dias 1..5
+    assert out[date(2020, 1, 5)] == 5  # dias 1..5
 
 
 def test_event_at_or_after_date_never_leaks():
@@ -28,7 +29,7 @@ def test_event_at_or_after_date_never_leaks():
     out = state_asof(EVENTS, _count, dates)
     assert out[date(2020, 1, 2)] == 1
     assert out[date(2020, 1, 6)] == 5
-    assert out[date(2020, 1, 11)] == 10        # todos os 10 já são passado
+    assert out[date(2020, 1, 11)] == 10  # todos os 10 já são passado
 
 
 def test_window_excludes_stale_events():
