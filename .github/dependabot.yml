@@ -1,15 +1,56 @@
 version: 2
-updates:
-  # 1. Atualiza as suas GitHub Actions (CI/CD)
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
 
-  # 2. Atualiza as dependências do seu projeto Python (pip)
+updates:
   - package-ecosystem: "pip"
     directory: "/"
+
     schedule:
       interval: "weekly"
       day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
+
+    open-pull-requests-limit: 5
+
+    groups:
+      python-minor-patch:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
+    pull-request-branch-name:
+      separator: "/"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:15"
+      timezone: "America/Sao_Paulo"
+
+    open-pull-requests-limit: 5
+
+    groups:
+      actions-minor-patch:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+    pull-request-branch-name:
+      separator: "/"
