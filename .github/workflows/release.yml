@@ -103,7 +103,7 @@ jobs:
             dist/*.tar.gz
 
       - name: Upload package artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: predictor-core-${{ github.run_id }}
           path: dist/*
