@@ -11,6 +11,17 @@ from importlib.metadata import version
 __version__ = version("predictor-core")
 
 # --- API pública estável (re-export das camadas) ---------------------------
+from predictor_core.contracts.scientific import (
+    SCIENTIFIC_GOVERNANCE_SCHEMA_VERSION,
+    DataAcquisitionCharter,
+    DatasetFreeze,
+    LatencySLA,
+    ResourceBudget,
+    ScientificState,
+    ScientificTransitionError,
+    TimestampSemantics,
+    validate_scientific_transition,
+)
 from predictor_core.data.asof import state_asof
 from predictor_core.data.collection import (
     COLLECTION_SCHEMA_VERSION,
@@ -22,6 +33,12 @@ from predictor_core.data.collection import (
     aggregate_funnel,
 )
 from predictor_core.data.contracts import PredictionPoint
+from predictor_core.data.source_quality import (
+    SourceQualityScorecard,
+    SourceQualityState,
+    SourceQualityThresholds,
+    source_quality_scorecard,
+)
 from predictor_core.kernel.infra import config_hash, connect, run_migrations
 from predictor_core.kernel.jsonl_store import JsonlStore
 from predictor_core.kernel.meta import StaleModelError, fingerprint, validate
@@ -178,4 +195,17 @@ __all__ = [
     "CollectionTransitionError",
     "ScientificPromotionError",
     "aggregate_funnel",
+    "SCIENTIFIC_GOVERNANCE_SCHEMA_VERSION",
+    "DataAcquisitionCharter",
+    "DatasetFreeze",
+    "TimestampSemantics",
+    "LatencySLA",
+    "ResourceBudget",
+    "ScientificState",
+    "ScientificTransitionError",
+    "validate_scientific_transition",
+    "SourceQualityScorecard",
+    "SourceQualityState",
+    "SourceQualityThresholds",
+    "source_quality_scorecard",
 ]

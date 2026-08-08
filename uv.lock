@@ -359,7 +359,7 @@ wheels = [
 
 [[package]]
 name = "predictor-core"
-version = "2.1.0"
+version = "2.2.0"
 source = { editable = "." }
 
 [package.optional-dependencies]
@@ -427,8 +427,8 @@ requires-dist = [
     { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.403,<2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.3,<10" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=9.0.3,<10" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.2,<7" },
-    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=6.2,<7" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.2,<8" },
+    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=6.2,<8" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.12.7,<1" },
 ]
 provides-extras = ["http", "scraping", "science", "test", "dev"]
@@ -441,7 +441,7 @@ dev = [
     { name = "pydantic", specifier = ">=2.11,<3" },
     { name = "pyright", specifier = ">=1.1.403,<2" },
     { name = "pytest", specifier = ">=9.0.3,<10" },
-    { name = "pytest-cov", specifier = ">=6.2,<7" },
+    { name = "pytest-cov", specifier = ">=6.2,<8" },
     { name = "ruff", specifier = ">=0.12.7,<1" },
 ]
 quality = [
@@ -454,7 +454,7 @@ test = [
     { name = "coverage", extras = ["toml"], specifier = ">=7.10,<8" },
     { name = "pydantic", specifier = ">=2.11,<3" },
     { name = "pytest", specifier = ">=9.0.3,<10" },
-    { name = "pytest-cov", specifier = ">=6.2,<7" },
+    { name = "pytest-cov", specifier = ">=6.2,<8" },
 ]
 
 [[package]]

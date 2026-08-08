@@ -9,6 +9,7 @@ formato nativo de uma API para estes envelopes; o domínio só enxerga os contra
 from __future__ import annotations
 
 import abc
+import math
 from dataclasses import dataclass
 from datetime import datetime
 from types import MappingProxyType
@@ -99,6 +100,15 @@ class SignalPoint:
     published_at: datetime
     reference_date: datetime | None = None
     vintage: datetime | None = None
+    instrument: str = ""
+    metric: str = ""
+    unit: str = ""
+    event_at: datetime | None = None
+    ingested_at: datetime | None = None
+    content_hash: str = ""
+    collector_version: str = ""
+    schema_version: str = ""
+    quality_flags: frozenset[str] = frozenset()
 
     def __post_init__(self) -> None:
         timestamp = _utc_datetime(self.timestamp, "SignalPoint.timestamp")
@@ -118,6 +128,41 @@ class SignalPoint:
             )
         if self.vintage is not None:
             object.__setattr__(self, "vintage", _utc_datetime(self.vintage, "SignalPoint.vintage"))
+        event_at = self.event_at or timestamp
+        ingested_at = self.ingested_at or self.vintage or published_at
+        event_at = _utc_datetime(event_at, "SignalPoint.event_at")
+        ingested_at = _utc_datetime(ingested_at, "SignalPoint.ingested_at")
+        if published_at < event_at or ingested_at < published_at:
+            raise ValueError("SignalPoint requires event_at <= published_at <= ingested_at")
+        if not math.isfinite(float(self.value)):
+            raise ValueError("SignalPoint.value must be finite")
+        if self.content_hash and (
+            len(self.content_hash) != 64
+            or any(char not in "0123456789abcdef" for char in self.content_hash.lower())
+        ):
+            raise ValueError("SignalPoint.content_hash must be a hexadecimal SHA-256")
+        object.__setattr__(self, "event_at", event_at)
+        object.__setattr__(self, "ingested_at", ingested_at)
+        object.__setattr__(self, "quality_flags", frozenset(self.quality_flags))
+
+    @property
+    def is_enriched(self) -> bool:
+        return all(
+            (
+                self.instrument,
+                self.metric,
+                self.unit,
+                self.content_hash,
+                self.collector_version,
+                self.schema_version,
+            )
+        )
+
+    def require_enriched(self) -> SignalPoint:
+        """Reject a legacy-compatible point at new ingestion boundaries."""
+        if not self.is_enriched:
+            raise ValueError("new SignalPoint data must include enriched provenance fields")
+        return self
 
 
 @dataclass(frozen=True)

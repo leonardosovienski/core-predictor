@@ -38,6 +38,23 @@ from predictor_core.contracts.registry import (  # noqa: F401
     register_trial,
     validate_trials,
 )
+from predictor_core.contracts.scientific import (  # noqa: F401
+    SCIENTIFIC_GOVERNANCE_SCHEMA_VERSION,
+    DataAcquisitionCharter,
+    DatasetFreeze,
+    LatencySLA,
+    ResourceBudget,
+    ScientificState,
+    ScientificTransitionError,
+    TimestampSemantics,
+    validate_scientific_transition,
+)
+from predictor_core.data.source_quality import (  # noqa: F401
+    SourceQualityScorecard,
+    SourceQualityState,
+    SourceQualityThresholds,
+    source_quality_scorecard,
+)
 
 # Os campos dos contratos são congelados (MappingProxyType/tuple/frozenset) e o
 # json não serializa duas dessas três formas. `to_jsonable` é o caminho
@@ -66,5 +83,18 @@ __all__ = [
     "CollectionTransitionError",
     "ScientificPromotionError",
     "aggregate_funnel",
+    "SCIENTIFIC_GOVERNANCE_SCHEMA_VERSION",
+    "DataAcquisitionCharter",
+    "DatasetFreeze",
+    "TimestampSemantics",
+    "LatencySLA",
+    "ResourceBudget",
+    "ScientificState",
+    "ScientificTransitionError",
+    "validate_scientific_transition",
+    "SourceQualityScorecard",
+    "SourceQualityState",
+    "SourceQualityThresholds",
+    "source_quality_scorecard",
     "to_jsonable",
 ]

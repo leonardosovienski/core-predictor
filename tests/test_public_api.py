@@ -16,7 +16,10 @@ EXPECTED_PUBLIC_API = frozenset(
     to_utc iso_z parse_iso NaiveDatetimeError JsonlStore PrequentialEvaluator
     MetricMismatchError state_asof PredictionPoint COLLECTION_SCHEMA_VERSION LifecycleState
     ObservationEnvelope CollectionArchive CollectionTransitionError ScientificPromotionError
-    aggregate_funnel""".split()
+    aggregate_funnel SCIENTIFIC_GOVERNANCE_SCHEMA_VERSION DataAcquisitionCharter DatasetFreeze
+    TimestampSemantics LatencySLA ResourceBudget ScientificState ScientificTransitionError
+    validate_scientific_transition SourceQualityScorecard SourceQualityState
+    SourceQualityThresholds source_quality_scorecard""".split()
 )
 
 

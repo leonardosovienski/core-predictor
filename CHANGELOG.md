@@ -1,5 +1,25 @@
 # Changelog — predictor_core
 
+## [2.2.0] — governança de aquisição e qualidade de fontes
+
+### Adicionado
+- `DataAcquisitionCharter` com semântica temporal, SLA de latência, orçamentos,
+  responsável, retenção, revisões, thresholds e estado inicial obrigatoriamente
+  `COLLECTION_ONLY`.
+- `DatasetFreeze` com selo SHA-256 determinístico, hashes de charters e partições,
+  classificação IS/OOS, identidade do registro de hipótese e versões de código,
+  coletores e schemas. O selo prova integridade, não autenticidade.
+- `ScientificState` e validação explícita de transições científicas.
+- `SourceQualityScorecard`, `SourceQualityThresholds` e `SourceQualityState`,
+  separados tanto de estado científico quanto de resultado operacional.
+- Campos de proveniência enriquecida em `SignalPoint`, com defaults para leitura
+  retrocompatível e `require_enriched()` nas novas fronteiras de ingestão.
+
+### Compatibilidade
+- Nenhum símbolo público anterior foi removido. Construções legadas de
+  `SignalPoint` permanecem aceitas; apenas consumidores que optarem pela nova
+  validação enriquecida precisam preencher os novos campos.
+
 Formato de versão: `MAJOR.MINOR.PATCH-tag-YYYYMMDD` (o `-tag-data` é o carimbo de
 procedência do sync; o `test_vendor_version_readable` do stocks valida o formato).
 Dentro de um MAJOR: mudanças **aditivas**; remoção de símbolo público exige bump de
