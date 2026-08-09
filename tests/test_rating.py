@@ -34,6 +34,31 @@ def test_rating_book_record_match_updates_both():
     assert book.rating("messi") == ea.rating
 
 
+def test_rating_book_seed_is_public_and_does_not_count_as_match():
+    book = RatingBook()
+    seeded = book.seed("vitality", 1590.0, games=12)
+    assert seeded.rating == 1590.0
+    assert seeded.games == 12
+    assert book.get("vitality") is seeded
+
+
+def test_rating_book_accepts_domain_expectation_and_event_k():
+    book = RatingBook()
+    book.seed("a", 1400.0)
+    book.seed("b", 1400.0)
+    ea, eb = book.record_match("a", "b", score_a=1.0, expected_a=0.6, k=40.0)
+    assert ea.rating == pytest.approx(1416.0)
+    assert eb.rating == pytest.approx(1384.0)
+
+
+@pytest.mark.parametrize("field", ["score_a", "expected_a"])
+def test_rating_book_rejects_invalid_domain_probability(field):
+    kwargs = {"score_a": 1.0, "expected_a": 0.5}
+    kwargs[field] = 1.1
+    with pytest.raises(ValueError, match=field):
+        RatingBook().record_match("a", "b", **kwargs)
+
+
 def test_rating_book_record_ranking_orders_by_strength():
     book = RatingBook()
     book.record_ranking(["p1", "p2", "p3"])
