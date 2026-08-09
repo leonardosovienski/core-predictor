@@ -1,6 +1,6 @@
 # Migration from `vendor/predictor_core`
 
-1. Pin the released wheel in the consumer manifest: `uv add predictor-core==2.1.0`
+1. Pin the released wheel in the consumer manifest: `uv add predictor-core==2.2.0`
    (add `--extra http` and/or `--extra scraping` when those capabilities are used).
 2. Replace any path injection or sibling-repository import with normal
    `predictor_core` imports. Existing `predictor_core.*` imports remain valid.

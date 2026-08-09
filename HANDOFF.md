@@ -3,7 +3,7 @@
 `predictor-core` is now a conventionally packaged scientific library.
 
 - Source: `src/predictor_core/`
-- Version source: `project.version` in `pyproject.toml` (`2.1.0`)
+- Version source: `project.version` in `pyproject.toml` (`2.2.0`)
 - Baseline: Python 3.13; Python 3.14 experimental
 - Resolver/build: `uv.lock` and `uv build --wheel`
 - Distribution: installed wheel only; vendoring is legacy

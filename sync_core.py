@@ -49,7 +49,7 @@ def audit(workspace: Path = WORKSPACE) -> int:
         vendor = consumer / "vendor" / "predictor_core"
         legacy = manifest(vendor)
         state = "MATCH" if legacy["aggregate"] == canonical["aggregate"] else "DRIFT"
-        print(f"{consumer.name}: {state}; migrate to predictor-core==2.1.0 and remove vendor")
+        print(f"{consumer.name}: {state}; migrate to predictor-core==2.2.0 and remove vendor")
     return (
         1
         if any(

@@ -1,4 +1,4 @@
-"""predictor-core — biblioteca vendorizada. NÃO editar local; sync via script.
+"""predictor-core — biblioteca científica canônica instalada como distribuição.
 
 Estrutura em camadas: kernel (L0) · measurement (L1) · data (L2, futuro). A API pública
 estável é re-exportada aqui — `from predictor_core import sharpe, emit_event, replay`.
