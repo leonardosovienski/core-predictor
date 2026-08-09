@@ -17,7 +17,7 @@ uv build --wheel
 Consumers install a released artifact, for example:
 
 ```bash
-uv add "predictor-core==2.1.0"
+uv add "predictor-core==2.2.0"
 python -c "import predictor_core; print(predictor_core.__version__)"
 ```
 
