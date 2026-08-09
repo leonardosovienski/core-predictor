@@ -12,6 +12,9 @@
 ### Compatibilidade
 - Chamadas existentes sem os novos argumentos mantêm exatamente a logística
   Elo, o K e os resultados da versão 2.2.0.
+- A validação de credenciais deixa de instanciar um modelo Pydantic dinâmico e
+  passa a usar a regra stdlib já documentada, corrigindo Python 3.14 sem mudar
+  mensagens, critérios ou tipos de retorno públicos.
 
 ## [2.2.0] — governança de aquisição e qualidade de fontes
 
