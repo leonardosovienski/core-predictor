@@ -90,14 +90,50 @@ class RatingBook:
     def rating(self, name: str) -> float:
         return self.get(name).rating
 
+    def seed(self, name: str, rating: float, *, games: int = 0) -> Entity:
+        """Define publicamente o estado inicial de uma entidade.
+
+        Domínios podem carregar ratings materializados sem acessar
+        ``_entities``. A operação é explícita e não conta como uma partida.
+        """
+        if games < 0:
+            raise ValueError(f"games deve ser >= 0: {games!r}")
+        entity = Entity(name=name, rating=float(rating), games=games)
+        self._entities[name] = entity
+        return entity
+
     def _k_for(self, entity: Entity) -> float:
         return self.k_factor(entity) if self.k_factor is not None else self.k
 
-    def record_match(self, name_a: str, name_b: str, *, score_a: float) -> tuple:
-        """Registra um confronto par-a-par e retorna (Entity_a, Entity_b) atualizados."""
+    def record_match(
+        self,
+        name_a: str,
+        name_b: str,
+        *,
+        score_a: float,
+        expected_a: float | None = None,
+        k: float | None = None,
+    ) -> tuple:
+        """Registra um confronto e retorna as duas entidades atualizadas.
+
+        ``expected_a`` permite que o domínio forneça a expectativa na mesma
+        unidade do resultado observado (por exemplo, uma série BO3 derivada
+        de probabilidades por mapa). Quando omitido, preserva a logística Elo
+        histórica. ``k`` sobrescreve o fator apenas para este evento.
+        """
+        if not (0.0 <= score_a <= 1.0):
+            raise ValueError(f"score_a fora de [0,1]: {score_a!r}")
         ea, eb = self.get(name_a), self.get(name_b)
-        k = max(self._k_for(ea), self._k_for(eb))
-        new_a, new_b = update_pair(ea.rating, eb.rating, score_a, k=k, scale=self.scale)
+        expectation = (
+            expected_score(ea.rating, eb.rating, scale=self.scale)
+            if expected_a is None
+            else expected_a
+        )
+        if not (0.0 <= expectation <= 1.0):
+            raise ValueError(f"expected_a fora de [0,1]: {expectation!r}")
+        event_k = max(self._k_for(ea), self._k_for(eb)) if k is None else k
+        delta = event_k * (score_a - expectation)
+        new_a, new_b = ea.rating + delta, eb.rating - delta
         ea2 = Entity(name=name_a, rating=new_a, games=ea.games + 1)
         eb2 = Entity(name=name_b, rating=new_b, games=eb.games + 1)
         self._entities[name_a] = ea2
