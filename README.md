@@ -32,6 +32,8 @@ The stable facade is `import predictor_core`; stable subpackages are `contracts`
 `predictor_core.stats`, `.infra`, `.net`, `.obs`, `.replay`, and `.settings` remain
 temporary compatibility shims. See [API compatibility](docs/API_COMPATIBILITY.md),
 [migration](docs/MIGRATION_FROM_VENDOR.md), and [versioning policy](docs/VERSIONING.md).
+The cross-domain temporal guarantees and consumer responsibilities are documented in
+[Temporal contract](docs/TEMPORAL_CONTRACT.md).
 
 `sync_core.py --audit` is read-only and exists only to locate legacy vendor copies.
 `--write` is permanently rejected. Distribution occurs through wheels.

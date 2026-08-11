@@ -3,7 +3,7 @@
 `predictor-core` is now a conventionally packaged scientific library.
 
 - Source: `src/predictor_core/`
-- Version source: `project.version` in `pyproject.toml` (`2.2.0`)
+- Version source: `project.version` in `pyproject.toml` (`2.2.1`)
 - Baseline: Python 3.13; Python 3.14 experimental
 - Resolver/build: `uv.lock` and `uv build --wheel`
 - Distribution: installed wheel only; vendoring is legacy
@@ -14,6 +14,11 @@ The public facade and canonical submodules are snapshot-tested. Scientific golde
 vectors cover metrics, bootstrap, calibration, Elo, ordinal, anti-lookahead, and the
 Experiment Registry with explicit numeric tolerances. Contracts remain in the core
 distribution to avoid duplicate type ownership.
+
+The boundaries of the shared temporal contract are recorded in
+`docs/TEMPORAL_CONTRACT.md`. In particular, the Core owns `PredictionPoint` and the
+feed-only `replay`; domain cutoffs, publication-time evidence, result recovery,
+identity, metrics, and domain-specific hashes remain consumer responsibilities.
 
 No workflow checks out, commits to, or pushes a consumer repository. Consumer migration
 is documented in `docs/MIGRATION_FROM_VENDOR.md`; consumers were intentionally not
