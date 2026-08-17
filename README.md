@@ -35,5 +35,10 @@ temporary compatibility shims. See [API compatibility](docs/API_COMPATIBILITY.md
 The cross-domain temporal guarantees and consumer responsibilities are documented in
 [Temporal contract](docs/TEMPORAL_CONTRACT.md).
 
+Cross-domain betting and exchange integrations use the immutable economic contract
+chain `ProbabilisticForecast → MarketQuote → EconomicDecision → ExecutionRecord
+→ SettlementRecord`. Its invariants and deliberate risk/governance boundaries are
+documented in [ADR-002](docs/ADR-002-domain-neutral-economic-contracts.md).
+
 `sync_core.py --audit` is read-only and exists only to locate legacy vendor copies.
 `--write` is permanently rejected. Distribution occurs through wheels.

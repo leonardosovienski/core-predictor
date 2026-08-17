@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "predictor-core"
-version = "2.2.1"
+version = "2.3.0"
 description = "Canonical scientific contracts and measurement library for Predictor domains"
 readme = "README.md"
 requires-python = ">=3.13"

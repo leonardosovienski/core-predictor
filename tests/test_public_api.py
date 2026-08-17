@@ -19,7 +19,10 @@ EXPECTED_PUBLIC_API = frozenset(
     aggregate_funnel SCIENTIFIC_GOVERNANCE_SCHEMA_VERSION DataAcquisitionCharter DatasetFreeze
     TimestampSemantics LatencySLA ResourceBudget ScientificState ScientificTransitionError
     validate_scientific_transition SourceQualityScorecard SourceQualityState
-    SourceQualityThresholds source_quality_scorecard""".split()
+    SourceQualityThresholds source_quality_scorecard ECONOMIC_CONTRACT_SCHEMA_VERSION
+    Selection Market OutcomeProbability ProbabilisticForecast QuoteSide MarketQuote
+    DecisionAction EconomicDecision Fill ExecutionStatus ExecutionRecord SettlementStatus
+    SettlementRecord EconomicChainError validate_economic_chain""".split()
 )
 
 

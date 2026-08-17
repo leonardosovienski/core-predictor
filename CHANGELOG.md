@@ -1,5 +1,24 @@
 # Changelog — predictor_core
 
+## [2.3.0] — contratos econômicos cross-domain
+
+### Adicionado
+- `Market` e `Selection` para identidade neutra de mercados e alternativas.
+- `ProbabilisticForecast` com distribuição normalizada, incerteza, estratégia,
+  dataset, modelo e cutoff informacional.
+- `MarketQuote` para back/lay, linha, spread, liquidez, preço executável,
+  closing quote, comissão e proveniência temporal.
+- `EconomicDecision`, `ExecutionRecord`, `Fill` e `SettlementRecord` para o
+  ciclo auditável de edge, elegibilidade, execução, custos e P&L.
+- `validate_economic_chain()` para validar IDs, outcomes, tempos e fills entre
+  os records do ciclo completo.
+- ADR-002 documenta os limites: Kelly, capital, governança e regras de fonte
+  permanecem fora do Core.
+
+### Compatibilidade
+- Extensão aditiva. `PredictionPoint` e todas as APIs anteriores permanecem
+  inalterados; consumidores podem migrar cada etapa independentemente.
+
 ## [2.2.1] — RatingBook extensível por domínio
 
 ### Adicionado

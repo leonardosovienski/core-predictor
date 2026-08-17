@@ -11,6 +11,24 @@ from importlib.metadata import version
 __version__ = version("predictor-core")
 
 # --- API pública estável (re-export das camadas) ---------------------------
+from predictor_core.contracts.economic import (
+    ECONOMIC_CONTRACT_SCHEMA_VERSION,
+    DecisionAction,
+    EconomicChainError,
+    EconomicDecision,
+    ExecutionRecord,
+    ExecutionStatus,
+    Fill,
+    Market,
+    MarketQuote,
+    OutcomeProbability,
+    ProbabilisticForecast,
+    QuoteSide,
+    Selection,
+    SettlementRecord,
+    SettlementStatus,
+    validate_economic_chain,
+)
 from predictor_core.contracts.scientific import (
     SCIENTIFIC_GOVERNANCE_SCHEMA_VERSION,
     DataAcquisitionCharter,
@@ -208,4 +226,21 @@ __all__ = [
     "SourceQualityState",
     "SourceQualityThresholds",
     "source_quality_scorecard",
+    # contracts — ciclo econômico cross-domain
+    "ECONOMIC_CONTRACT_SCHEMA_VERSION",
+    "Selection",
+    "Market",
+    "OutcomeProbability",
+    "ProbabilisticForecast",
+    "QuoteSide",
+    "MarketQuote",
+    "DecisionAction",
+    "EconomicChainError",
+    "EconomicDecision",
+    "Fill",
+    "ExecutionStatus",
+    "ExecutionRecord",
+    "SettlementStatus",
+    "SettlementRecord",
+    "validate_economic_chain",
 ]
