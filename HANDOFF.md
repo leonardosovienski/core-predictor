@@ -3,7 +3,7 @@
 `predictor-core` is now a conventionally packaged scientific library.
 
 - Source: `src/predictor_core/`
-- Version source: `project.version` in `pyproject.toml` (`2.2.1`)
+- Version source: `project.version` in `pyproject.toml` (`2.3.0`)
 - Baseline: Python 3.13; Python 3.14 experimental
 - Resolver/build: `uv.lock` and `uv build --wheel`
 - Distribution: installed wheel only; vendoring is legacy
@@ -20,6 +20,11 @@ The boundaries of the shared temporal contract are recorded in
 feed-only `replay`; domain cutoffs, publication-time evidence, result recovery,
 identity, metrics, and domain-specific hashes remain consumer responsibilities.
 
+The current economic contract chain is `ProbabilisticForecast → MarketQuote →
+EconomicDecision → ExecutionRecord → SettlementRecord`. It is domain-neutral and does
+not authorize capital, choose sizing, or decide whether a hypothesis is profitable.
+Those responsibilities remain outside Core by design.
+
 No workflow checks out, commits to, or pushes a consumer repository. Consumer migration
-is documented in `docs/MIGRATION_FROM_VENDOR.md`; consumers were intentionally not
-modified in this repository change.
+is documented in `docs/MIGRATION_FROM_VENDOR.md`; consumers must consume released
+artifacts rather than vendor copies in the modern architecture.
