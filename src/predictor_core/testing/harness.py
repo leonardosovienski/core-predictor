@@ -146,8 +146,8 @@ def attest_pipeline_power(
     issued_at = datetime.now(UTC)
     record = {
         "schema_version": _ATTESTATION_SCHEMA_VERSION,
-        "passed_at": issued_at.isoformat(timespec="seconds"),
-        "expires_at": (issued_at + valid_for).isoformat(timespec="seconds"),
+        "passed_at": issued_at.isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "expires_at": (issued_at + valid_for).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "core_version": _core_version(),
         "evaluate": getattr(evaluate_func, "__name__", repr(evaluate_func)),
         "edge_verdict": edge_verdict,

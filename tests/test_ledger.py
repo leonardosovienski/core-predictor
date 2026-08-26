@@ -63,6 +63,27 @@ def test_posting_rejects_nonfinite_amount():
         Posting("a", float("nan"))
 
 
+def test_transaction_rejects_naive_timestamp_and_mutable_history():
+    with pytest.raises(ValueError, match="timezone"):
+        Transaction(
+            at=datetime(2026, 7, 11),
+            postings=(Posting("a", 1.0), Posting("b", -1.0)),
+        )
+    ledger = Ledger()
+    txn = ledger.post(
+        _now(),
+        [Posting("a", 1.0), Posting("b", -1.0)],
+        metadata={"source": "test", "nested": {"items": [1]}},
+    )
+    assert isinstance(ledger.transactions, tuple)
+    with pytest.raises(AttributeError):
+        ledger.transactions.clear()
+    with pytest.raises(TypeError):
+        txn.metadata["source"] = "changed"
+    with pytest.raises(TypeError):
+        txn.metadata["nested"]["items"] = []
+
+
 def test_transacao_grande_legitimamente_balanceada_e_aceita():
     """Regressão: tolerância absoluta 1e-9 reprovava soma matematicamente zero
     em magnitude 1e15 (resíduo float ~0.025)."""

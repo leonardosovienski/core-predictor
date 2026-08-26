@@ -21,6 +21,9 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 from datetime import datetime
+from types import MappingProxyType
+
+from predictor_core.kernel.timeindex import NaiveDatetimeError, to_utc
 
 __all__ = ["Posting", "Transaction", "Ledger", "UnbalancedTransactionError"]
 
@@ -28,6 +31,18 @@ _EPS = 1e-9  # piso absoluto (amounts pequenos)
 _REL_EPS = 1e-12  # tolerância relativa à magnitude (amounts grandes: erro de
 # arredondamento float cresce com a escala — 1e15+0.1-1e15-0.1
 # deixa resíduo ~0.025, matematicamente zero)
+
+
+def _freeze_metadata(value: object) -> object:
+    if isinstance(value, dict):
+        return MappingProxyType({key: _freeze_metadata(item) for key, item in value.items()})
+    if isinstance(value, list):
+        return tuple(_freeze_metadata(item) for item in value)
+    if isinstance(value, set):
+        return frozenset(_freeze_metadata(item) for item in value)
+    if isinstance(value, tuple):
+        return tuple(_freeze_metadata(item) for item in value)
+    return value
 
 
 class UnbalancedTransactionError(ValueError):
@@ -65,6 +80,15 @@ class Transaction:
     metadata: dict | None = None
 
     def __post_init__(self) -> None:
+        if not isinstance(self.at, datetime):
+            raise TypeError("Transaction.at deve ser datetime timezone-aware")
+        try:
+            object.__setattr__(self, "at", to_utc(self.at))
+        except NaiveDatetimeError as exc:
+            raise ValueError("Transaction.at deve ter timezone") from exc
+        object.__setattr__(self, "postings", tuple(self.postings))
+        if self.metadata is not None:
+            object.__setattr__(self, "metadata", _freeze_metadata(self.metadata))
         if len(self.postings) < 2:
             raise ValueError("Transaction exige >= 2 postings (partida dobrada)")
         total = sum(p.amount for p in self.postings)
@@ -86,13 +110,17 @@ class Ledger:
     histórico (mesmo espírito do `PredictionPoint`/`TrialRegistry`: correção é
     entrada nova, não reescrita silenciosa)."""
 
-    transactions: list = field(default_factory=list)
+    _transactions: tuple[Transaction, ...] = field(default_factory=tuple, init=False, repr=False)
+
+    @property
+    def transactions(self) -> tuple[Transaction, ...]:
+        return self._transactions
 
     def post(
         self, at: datetime, postings: list, *, narration: str = "", metadata: dict | None = None
     ) -> Transaction:
         txn = Transaction(at=at, postings=tuple(postings), narration=narration, metadata=metadata)
-        self.transactions.append(txn)
+        self._transactions = (*self._transactions, txn)
         return txn
 
     def balance(self, account: str) -> float:

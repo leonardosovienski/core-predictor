@@ -72,7 +72,7 @@ def test_campos_opcionais_do_schema(tmp_path):
         params={"h": 7},
         path=p,
         features_used=["rsi"],
-        test_period=["2026-07-01", "2026-07-31"],
+        test_period=["2026-07-01T00:00:00Z", "2026-07-31T00:00:00Z"],
         **_NOGATE,
     )
     t = load_trials(p)[0]
@@ -111,6 +111,18 @@ def test_periodo_com_os_dois_lados_none_e_rejeitado(key):
         key: [None, None],
     }
     assert any(f"{key} inválido" in e for e in validate_trials([trial]))
+
+
+def test_periodo_fechado_exige_iso8601_utc():
+    trial = {
+        "name": "t1",
+        "registered_at": "2026-07-07T00:00:00Z",
+        "params": {"a": 1},
+        "sharpe": None,
+        "notes": "",
+        "test_period": ["2026-07-20", "2026-07-21"],
+    }
+    assert any("ISO-8601 UTC" in error for error in validate_trials([trial]))
 
 
 def test_extra_desconhecido_e_rejeitado_antes_de_persistir(tmp_path):

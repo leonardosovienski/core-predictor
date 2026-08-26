@@ -59,6 +59,17 @@ _ALLOWED_EXTRA = {
     "delta_rps_ci95",
 }
 _TRIAL_FIELDS = {"name", "registered_at", "params", "sharpe", "notes", "metric", *_ALLOWED_EXTRA}
+_ATTESTATION_SCHEMA_VERSION = "pipeline-power/2"
+
+
+def _parse_utc_z(value: object) -> datetime | None:
+    if not isinstance(value, str) or not value.endswith("Z"):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value[:-1] + "+00:00")
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else None
 
 
 class PowerAttestationMissingError(RuntimeError):
@@ -273,9 +284,7 @@ def validate_trials(trials: list[dict]) -> list[str]:
             seen.add(name)
             tag = f"trial[{name}]"
         ra = t.get("registered_at", "")
-        try:
-            datetime.strptime(ra, "%Y-%m-%dT%H:%M:%SZ")
-        except (TypeError, ValueError):
+        if _parse_utc_z(ra) is None:
             errs.append(f"{tag}: registered_at inválido ({ra!r}) — use ISO-8601 UTC 'Z'")
         params = t.get("params")
         if not isinstance(params, dict) or not params:
@@ -322,6 +331,10 @@ def validate_trials(trials: list[dict]) -> list[str]:
                     errs.append(
                         f"{tag}: {key} inválido — [início, fim] ISO-8601, "
                         "um lado pode ser None (limite aberto) mas não os dois"
+                    )
+                elif any(x is not None and _parse_utc_z(x) is None for x in per):
+                    errs.append(
+                        f"{tag}: {key} inválido — limites fechados devem usar ISO-8601 UTC 'Z'"
                     )
         fu = t.get("features_used")
         if fu is not None and not (isinstance(fu, list) and all(isinstance(x, str) for x in fu)):
@@ -462,7 +475,12 @@ def _register_trial_locked(
                 "metric",
                 "pipeline_fingerprint",
             }
-            if not attestation or not required <= attestation.keys():
+            if (
+                not attestation
+                or attestation.get("schema_version") != _ATTESTATION_SCHEMA_VERSION
+                or not required <= attestation.keys()
+                or _parse_utc_z(attestation.get("passed_at")) is None
+            ):
                 raise PowerAttestationMissingError(
                     f"trial nova '{name}' sem atestado de controle positivo válido "
                     f"({att}) — rode testing.harness.attest_pipeline_power antes de registrar."
