@@ -1,30 +1,31 @@
-# Handoff
+# HANDOFF — predictor-core
 
-`predictor-core` is now a conventionally packaged scientific library.
+**Estado corrente: 2026-09-01 — versão 3.0.0.**
 
-- Source: `src/predictor_core/`
-- Version source: `project.version` in `pyproject.toml` (`2.3.0`)
-- Baseline: Python 3.13; Python 3.14 experimental
-- Resolver/build: `uv.lock` and `uv build --wheel`
-- Distribution: installed wheel only; vendoring is legacy
-- Migration audit: `python sync_core.py --audit` (strictly read-only)
-- Local gates: Ruff, Pyright, coverage, and Pytest through `uv run`
+Biblioteca científica instalável, com source em `src/predictor_core/`, Python 3.13
+como baseline e 3.14 experimental. Distribuição moderna é exclusivamente por wheel;
+vendoring é legado e `sync_core.py --audit` é somente leitura.
 
-The public facade and canonical submodules are snapshot-tested. Scientific golden
-vectors cover metrics, bootstrap, calibration, Elo, ordinal, anti-lookahead, and the
-Experiment Registry with explicit numeric tolerances. Contracts remain in the core
-distribution to avoid duplicate type ownership.
+O 3.0 foi deliberadamente estreitado para primitivas com consumidores cross-domain
+comprovados: contratos científicos/temporais, dados, métricas, bootstrap, trials,
+replay, avaliação prequential e utilitários de teste. Foram removidos os antigos
+contratos econômicos, rating, calibration, ordinal, ledger, null-reference, as-of e
+stress da linha 2.x.
 
-The boundaries of the shared temporal contract are recorded in
-`docs/TEMPORAL_CONTRACT.md`. In particular, the Core owns `PredictionPoint` and the
-feed-only `replay`; domain cutoffs, publication-time evidence, result recovery,
-identity, metrics, and domain-specific hashes remain consumer responsibilities.
+Os gates econômicos atuais de Brasileirão, cripto e ações permanecem nos domínios.
+Core não escolhe bet, trade, rebalanceamento, sizing ou permissão de capital. Uma
+abstração econômica só deve voltar após separar a regra verdadeiramente comum das
+semânticas locais de odds, funding e turnover.
 
-The current economic contract chain is `ProbabilisticForecast → MarketQuote →
-EconomicDecision → ExecutionRecord → SettlementRecord`. It is domain-neutral and does
-not authorize capital, choose sizing, or decide whether a hypothesis is profitable.
-Those responsibilities remain outside Core by design.
+Validação:
 
-No workflow checks out, commits to, or pushes a consumer repository. Consumer migration
-is documented in `docs/MIGRATION_FROM_VENDOR.md`; consumers must consume released
-artifacts rather than vendor copies in the modern architecture.
+```bash
+uv sync --frozen --group dev
+uv run python -m pytest
+uv run ruff check .
+uv run pyright
+uv build --wheel
+```
+
+Nenhum workflow deste projeto modifica, commita ou publica em repositórios
+consumidores.

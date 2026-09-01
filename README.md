@@ -17,7 +17,7 @@ uv build --wheel
 Consumers install a released artifact, for example:
 
 ```bash
-uv add "predictor-core==2.3.0"
+uv add "predictor-core==3.0.0"
 python -c "import predictor_core; print(predictor_core.__version__)"
 ```
 
@@ -38,6 +38,10 @@ The cross-domain temporal guarantees and consumer responsibilities are documente
 Version 3.0 keeps only primitives with demonstrated cross-domain consumers.
 Economic, rating, calibration, ordinal, ledger, null-reference, as-of and stress
 helpers were removed; domains own those concerns until a second consumer exists.
+
+The economic abstention gates currently used by Brasileirão, crypto and stocks are
+domain-owned. Core supplies the temporal, statistical and prequential primitives used
+to evaluate them, but it does not choose trades, bets, rebalances or capital state.
 
 `sync_core.py --audit` is read-only and exists only to locate legacy vendor copies.
 `--write` is permanently rejected. Distribution occurs through wheels.
