@@ -1,6 +1,6 @@
 # HANDOFF — predictor-core
 
-**Estado corrente: 2026-09-01 — versão 3.0.0.**
+**Estado corrente: 2026-09-02 — versão 3.1.0.**
 
 Biblioteca científica instalável, com source em `src/predictor_core/`, Python 3.13
 como baseline e 3.14 experimental. Distribuição moderna é exclusivamente por wheel;

@@ -58,6 +58,29 @@ def test_replay_key_accepts_monotonic():
     assert ledger == [1, 2, 3]
 
 
+def test_replay_rejects_data_available_after_cutoff_before_handler_runs():
+    events = [{"event_at": "2026-01-01T12:00Z", "available_at": "2026-01-01T12:01Z"}]
+    called = False
+
+    def handler(_past):
+        nonlocal called
+        called = True
+
+    with pytest.raises(replay.LookaheadError, match="depois do cutoff"):
+        replay.replay(
+            events,
+            handler,
+            key=lambda event: event["event_at"],
+            available_at=lambda event: event["available_at"],
+        )
+    assert not called
+
+
+def test_replay_availability_check_requires_explicit_cutoff_key():
+    with pytest.raises(ValueError, match="available_at exige key"):
+        replay.replay([{"available_at": 1}], lambda _past: None, available_at=lambda event: 1)
+
+
 def test_pastview_negativo_alem_do_inicio_e_indexerror_nao_lookahead():
     """Regressão: past[-10] com 3 eventos levantava LookaheadError — acesso a
     passado inexistente não é lookahead; o diagnóstico do erro capital ficava poluído."""

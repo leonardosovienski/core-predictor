@@ -1,5 +1,42 @@
 # Changelog — predictor_core
 
+## [3.1.0] — registro prospectivo e fronteira temporal
+
+### Adicionado
+- `TrialRegistryV2` e migrador legado não destrutivo, idempotente e auditável.
+- Campos explícitos de hipótese, horizonte, cutoff, versões, multiplicidade e caminho
+  de seleção; lacunas históricas permanecem `UNKNOWN` em vez de serem inventadas.
+- Fingerprints de dataset e código para proveniência reproduzível.
+
+### Integridade temporal
+- Replay rejeita observações cujo `available_at` ultrapassa o cutoff reconstruído.
+- O contrato e o guia de migração documentam a responsabilidade do domínio por
+  timestamps point-in-time e controles locais.
+
+## [3.0.0] — núcleo científico estritamente compartilhado
+
+### Breaking changes
+- Removidos da API e da distribuição os contratos econômicos e os helpers de rating
+  (Elo), calibração (Platt/Shin), ordinal, ledger, null-reference, as-of, coverage e
+  stress. Não havia reutilização cross-domain suficiente para justificar ownership no
+  Core; consumidores devem manter implementações de domínio quando realmente usadas.
+- A fachada pública foi reduzida às primitivas científicas neutras com consumidores
+  reais. Imports dos módulos removidos deixam de funcionar e exigem migração no domínio.
+- `sync_core.py --write` foi desativado. Distribuição suportada passa a ser wheel
+  versionado; vendors legados são apenas auditados.
+
+### Contratos e migração
+- Versão mínima de Python elevada para 3.13; metadados, lock e exemplos agora identificam
+  `predictor-core==3.0.0`.
+- Trial Registry legado continua disponível para leitura e consumidores existentes.
+- A documentação de handoff/migração foi alinhada ao runtime 3.0.0.
+
+### Implicações para consumidores
+- Fixar a wheel 3.0.0, remover dependência de vendor/PYTHONPATH e executar golden tests
+  científicos antes de reemitir qualquer atestado de harness.
+- Manter primitivas específicas no repositório do domínio; promoção futura exige ao
+  menos dois consumidores reais ou uma justificativa arquitetural concreta.
+
 ## [2.3.0] — contratos econômicos cross-domain
 
 ### Adicionado

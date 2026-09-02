@@ -17,7 +17,9 @@ EXPECTED_PUBLIC_API = frozenset(
     aggregate_funnel SCIENTIFIC_GOVERNANCE_SCHEMA_VERSION DataAcquisitionCharter DatasetFreeze
     TimestampSemantics LatencySLA ResourceBudget ScientificState ScientificTransitionError
     validate_scientific_transition SourceQualityScorecard SourceQualityState
-    SourceQualityThresholds source_quality_scorecard""".split()
+    SourceQualityThresholds source_quality_scorecard TRIAL_SCHEMA_VERSION UNKNOWN
+    NOT_APPLICABLE TrialSchemaError TrialRegistryV2 validate_trial_v2 require_trial_v2
+    migrate_legacy_trial migrate_legacy_registry dataset_fingerprint current_code_version""".split()
 )
 
 

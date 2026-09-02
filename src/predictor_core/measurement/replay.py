@@ -55,7 +55,7 @@ class PastView:
         return self._data[idx]
 
 
-def replay(events, handler, *, key=None) -> list:
+def replay(events, handler, *, key=None, available_at=None) -> list:
     """Reexecuta `events` (ORDENADOS NO TEMPO) ponto-a-ponto. Para cada asof, entrega ao
     handler uma PastView só do passado (<= asof) — ele não tem como consultar asof+1.
 
@@ -68,12 +68,18 @@ def replay(events, handler, *, key=None) -> list:
     é VERIFICADA (não assumida): eventos fora de ordem levantam ValueError em vez de
     corromper a semântica de asof silenciosamente — ordem quebrada é leakage temporal.
 
+    `available_at`: callable(evento) -> timestamp comparável. Requer `key` e valida
+    que cada observação já estava disponível no seu cutoff. Dados publicados depois
+    do cutoff falham fechados antes de qualquer handler executar.
+
     CONTRATO DE IMUTABILIDADE: a PastView devolve REFERÊNCIAS aos eventos originais
     (não cópias). O handler NÃO pode mutar `past.latest` nem itens fatiados — mutar um
     evento contamina todos os passos futuros (leakage por objeto compartilhado). Passe
     eventos imutáveis (tuplas/namedtuples/frozen) para que a regra seja estrutural.
     """
     data = tuple(events)
+    if available_at is not None and key is None:
+        raise ValueError("replay: available_at exige key para definir o cutoff")
     if key is not None and len(data) > 1:
         ts = [key(e) for e in data]
         bad = next((i for i in range(1, len(ts)) if ts[i] < ts[i - 1]), None)
@@ -82,6 +88,16 @@ def replay(events, handler, *, key=None) -> list:
                 f"replay: eventos não monotônicos no tempo (índice {bad}: "
                 f"{ts[bad]!r} < {ts[bad - 1]!r}) — ordem quebrada é leakage temporal"
             )
+    if available_at is not None:
+        assert key is not None  # validated above; narrows the callable for type checkers
+        for i, event in enumerate(data):
+            cutoff = key(event)
+            availability = available_at(event)
+            if availability > cutoff:
+                raise LookaheadError(
+                    f"replay: evento no índice {i} disponível em {availability!r} "
+                    f"depois do cutoff {cutoff!r}"
+                )
     ledger = []
     for i in range(len(data)):
         # Entrega somente o prefixo já observado. Mesmo acesso indevido ao

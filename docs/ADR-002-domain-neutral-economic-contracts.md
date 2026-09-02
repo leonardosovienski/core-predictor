@@ -1,6 +1,7 @@
 # ADR-002: Domain-neutral economic contracts
 
-Status: accepted
+Status: superseded by DEC-010 and removed in predictor-core 3.0.0. This file is retained
+as a historical record; it does not describe the current public API.
 
 ## Context
 

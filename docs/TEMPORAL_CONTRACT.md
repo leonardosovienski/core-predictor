@@ -14,6 +14,11 @@ at `matures_at`. Both timestamps must be timezone-aware, `matures_at` cannot pre
 current and earlier events. Future indexing raises `LookaheadError`, and a supplied
 time key must be monotonic. This is the structural anti-lookahead primitive.
 
+When the feed distinguishes event time from publication time, pass both `key` (the
+cutoff) and `available_at`. An observation with `available_at > cutoff` is rejected
+before the handler runs. The internal tuple of every `PastView` is also only the
+already-observed prefix; inspecting `_data` cannot recover a future record.
+
 These guarantees cover temporal representation and feed visibility. They do not
 claim that a consumer selected the correct domain cutoff or knew when an external
 source actually published an observation.

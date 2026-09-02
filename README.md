@@ -17,7 +17,7 @@ uv build --wheel
 Consumers install a released artifact, for example:
 
 ```bash
-uv add "predictor-core==3.0.0"
+uv add "predictor-core==3.1.0"
 python -c "import predictor_core; print(predictor_core.__version__)"
 ```
 
@@ -34,6 +34,9 @@ temporary compatibility shims. See [API compatibility](docs/API_COMPATIBILITY.md
 [migration](docs/MIGRATION_FROM_VENDOR.md), and [versioning policy](docs/VERSIONING.md).
 The cross-domain temporal guarantees and consumer responsibilities are documented in
 [Temporal contract](docs/TEMPORAL_CONTRACT.md).
+Prospective experiment provenance is defined by the
+[Trial Registry V2 contract](docs/TRIAL_REGISTRY_V2.md); the legacy registry remains
+available only for compatibility and non-destructive migration.
 
 Version 3.0 keeps only primitives with demonstrated cross-domain consumers.
 Economic, rating, calibration, ordinal, ledger, null-reference, as-of and stress
