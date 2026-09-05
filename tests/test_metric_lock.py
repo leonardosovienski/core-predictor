@@ -24,6 +24,7 @@ def _attest(trials_path, metric):
         lambda: ar1_series(200, 0.0, 0.02, seed=2, mu=0.0),
         attestation_path=attestation_path_for(trials_path),
         metric=metric,
+        repo=trials_path.parent,
     )
 
 
