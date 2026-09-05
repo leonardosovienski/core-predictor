@@ -8,7 +8,8 @@ EXPECTED_PUBLIC_API = frozenset(
     validate StaleModelError sharpe sortino max_drawdown probabilistic_sharpe_ratio spearman
     spearman_block_ci bootstrap_ci block_bootstrap_ci ci_mean brier log_loss rps
     calibration_table diebold_mariano TrialRegistry register_trial load_trials validate_trials
-    deflated_sharpe_ratio attestation_path_for PowerAttestationMissingError replay PastView
+    deflated_sharpe_ratio DeflationNotEstimableError attestation_path_for
+    PowerAttestationMissingError replay PastView
     LookaheadError
     utcnow
     to_utc iso_z parse_iso NaiveDatetimeError JsonlStore PrequentialEvaluator
