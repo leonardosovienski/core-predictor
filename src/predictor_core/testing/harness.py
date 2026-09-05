@@ -18,7 +18,24 @@ from datetime import UTC, datetime, timedelta
 from importlib.metadata import version
 from pathlib import Path
 
+from predictor_core.contracts.trial_v2 import current_code_version
+
 _ATTESTATION_SCHEMA_VERSION = "pipeline-power/2"
+
+
+class DirtyWorkingTreeError(RuntimeError):
+    """Atestado pedido a partir de árvore de trabalho suja — recusado.
+
+    O atestado é o que destrava o registro de trials NOVAS. Se o código que
+    passou no controle positivo não é identificável por um commit, o que ele
+    autoriza não é reproduzível por terceiro: o `pipeline_fingerprint` fixa a
+    régua avaliada, mas não o resto da árvore que a rodou. Emitir assim produz
+    trials que ninguém consegue refazer.
+
+    Auditoria adversarial 2026-09-05, achado 7: o atestado em produção trazia
+    `code_version` terminando em `;dirty` — honesto no rótulo e irreprodutível
+    no fato.
+    """
 
 
 def pipeline_fingerprint(evaluate_func, edge_generator, noise_generator, *, metric: str) -> str:
@@ -120,6 +137,8 @@ def attest_pipeline_power(
     null_verdict: str = "REFUTADA",
     metric: str = "",
     valid_for: timedelta = timedelta(days=7),
+    repo: Path | str | None = None,
+    allow_dirty: bool = False,
 ) -> dict:
     """Roda o controle positivo e, PASSANDO, emite o atestado que destrava a
     criação de trials novas no Experiment Registry (measurement.trials).
@@ -131,11 +150,26 @@ def attest_pipeline_power(
     `metric`: nome da métrica que o pipeline atestado
     usa (ex.: "brier" para binário, "rps" para ordinal). Vai no atestado; o
     registry exige que a trial declare a MESMA métrica e o
-    `pipeline_fingerprint` retornado. `valid_for` limita a vida do atestado."""
+    `pipeline_fingerprint` retornado. `valid_for` limita a vida do atestado.
+
+    `repo`: raiz do repositório cujo estado de código entra no atestado (padrão:
+    diretório corrente). O atestado passa a gravar `code_version`.
+
+    `allow_dirty`: FALSE por padrão — árvore suja levanta DirtyWorkingTreeError e
+    NÃO grava nada. Passe True apenas para exploração local, ciente de que a
+    trial autorizada nasce irreprodutível."""
     if not isinstance(metric, str) or not metric:
         raise ValueError("metric é obrigatória para emitir atestado de poder")
     if valid_for <= timedelta(0):
         raise ValueError("valid_for deve ser positivo")
+    code_version = current_code_version(repo)
+    if code_version.endswith(";dirty") and not allow_dirty:
+        raise DirtyWorkingTreeError(
+            f"árvore de trabalho suja ({code_version}) — o atestado destrava trials "
+            "novas, e um atestado de código não identificável destrava trials que "
+            "ninguém consegue reproduzir. Faça commit do estado avaliado, ou passe "
+            "allow_dirty=True assumindo que a trial nasce irreprodutível."
+        )
     assert_pipeline_has_power(
         evaluate_func,
         edge_generator,
@@ -149,6 +183,7 @@ def attest_pipeline_power(
         "passed_at": issued_at.isoformat(timespec="seconds").replace("+00:00", "Z"),
         "expires_at": (issued_at + valid_for).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "core_version": _core_version(),
+        "code_version": code_version,
         "evaluate": getattr(evaluate_func, "__name__", repr(evaluate_func)),
         "edge_verdict": edge_verdict,
         "note": note,

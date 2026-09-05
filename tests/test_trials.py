@@ -190,6 +190,7 @@ def test_atestado_do_harness_destrava_o_registro(tmp_path):
         attestation_path=attestation_path_for(p),
         note="teste",
         metric="brier",
+        repo=tmp_path,
     )
     assert rec["passed_at"]
     register_trial(
@@ -215,6 +216,7 @@ def test_harness_reprovado_nao_emite_atestado(tmp_path):
             lambda: [0.0] * 10,
             attestation_path=ap,
             metric="brier",
+            repo=tmp_path,
         )
     assert not ap.exists()
 
