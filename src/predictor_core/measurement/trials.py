@@ -17,14 +17,29 @@ O arquivo de tentativas é VERSIONADO de propósito: o desconto só é honesto s
 denominador (quantas tentativas houve) sobreviver ao esquecimento seletivo.
 
 TRAVA DE PODER (harness ↔ registry): um NO-GO só é interpretável se o pipeline
-provou que detectaria edge plantado (testing/harness). Criar uma trial NOVA
+provou que detectaria edge plantado (testing/harness). PRODUZIR UM VEREDITO
 exige um ATESTADO — arquivo irmão `<trials>.harness_attestation.json`, emitido
 por `testing.harness.attest_pipeline_power` — senão o registro está governando
-vereditos de um juiz possivelmente cego. Atualizar sharpe/notes de trial
-EXISTENTE não exige (a maturação automática de resultados não pode depender do
-harness ter rodado na mesma máquina). O atestado é arquivo, não flag em
+vereditos de um juiz possivelmente cego. O atestado é arquivo, não flag em
 memória, porque o harness roda na suíte de testes e o registro roda no
 pipeline: processos distintos.
+
+São DOIS os caminhos que produzem veredito, e ambos passam pela trava: criar
+trial nova, e mudar `status`/`sharpe` de uma existente. Atualizar apenas
+`notes` não produz veredito e segue livre.
+
+Até 2026-09-05 o segundo caminho era isento, sob o argumento de que "a
+maturação automática de resultados não pode depender do harness ter rodado na
+mesma máquina". A auditoria adversarial (achado 3) mostrou o custo: com o mesmo
+`name` e os mesmos `params`, uma trial `refutada` virava `comprovada` sem
+controle positivo nenhum, e o estado anterior sumia sem rastro. O argumento da
+maturação continua válido como incômodo — uma coorte que atualiza resultado
+precisa de atestado vigente (validade de 7 dias) — mas conveniência de
+atualização não pode ser mais forte que a prova de que o juiz enxerga.
+
+APPEND-ONLY quanto a vereditos: substituir um veredito preserva o anterior em
+`superseded`, com o instante da substituição. O registro deixa de poder
+esquecer o que já afirmou.
 
 Unidades: os `sharpe` registrados e o DSR operam POR-PERÍODO (a mesma unidade
 que o PSR observa internamente), NÃO anualizada.
@@ -40,10 +55,12 @@ import math
 import os
 import sys
 import time
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from importlib.metadata import version
 from pathlib import Path
 from statistics import NormalDist, variance
+from typing import Any
 
 from predictor_core.measurement.stats import probabilistic_sharpe_ratio
 
@@ -57,6 +74,10 @@ _ALLOWED_EXTRA = {
     "rps_dixon",
     "rps_elo_baseline",
     "delta_rps_ci95",
+    # Histórico append-only de vereditos substituídos. Escrito pelo registro,
+    # nunca pelo chamador: mudar status/sharpe de uma trial existente preserva o
+    # estado anterior aqui em vez de apagá-lo.
+    "superseded",
 }
 _TRIAL_FIELDS = {"name", "registered_at", "params", "sharpe", "notes", "metric", *_ALLOWED_EXTRA}
 _ATTESTATION_SCHEMA_VERSION = "pipeline-power/2"
@@ -339,6 +360,22 @@ def validate_trials(trials: list[dict]) -> list[str]:
         fu = t.get("features_used")
         if fu is not None and not (isinstance(fu, list) and all(isinstance(x, str) for x in fu)):
             errs.append(f"{tag}: features_used inválido — list[str]")
+        sup = t.get("superseded")
+        if sup is not None:
+            if not isinstance(sup, list) or not all(isinstance(x, dict) for x in sup):
+                errs.append(f"{tag}: superseded inválido — list[dict] de vereditos anteriores")
+            else:
+                for j, antigo in enumerate(sup):
+                    if "superseded_at" not in antigo:
+                        errs.append(
+                            f"{tag}: superseded[{j}] sem superseded_at — um veredito "
+                            "substituído precisa dizer QUANDO deixou de valer"
+                        )
+                    elif _parse_utc_z(antigo["superseded_at"]) is None:
+                        errs.append(
+                            f"{tag}: superseded[{j}].superseded_at inválido "
+                            f"({antigo['superseded_at']!r}) — ISO-8601 UTC 'Z'"
+                        )
     return errs
 
 
@@ -369,10 +406,18 @@ def register_trial(
     configuração é tentativa NOVA (N+1), e escondê-la num update fabricaria
     significância que o DSR não desconta.
 
-    Trava de poder: criar trial NOVA exige o atestado do harness (arquivo irmão;
-    ver docstring do módulo). `power_attestation`: None = procura o irmão;
-    caminho = usa esse arquivo; False = bypass EXPLÍCITO (só para teste de
-    mecânica do registro — nunca em pesquisa real).
+    Trava de poder: PRODUZIR VEREDITO exige o atestado do harness (arquivo
+    irmão; ver docstring do módulo). São dois os caminhos que produzem veredito
+    — criar trial nova, e mudar `status`/`sharpe` de uma existente. Atualizar
+    apenas `notes` não é veredito e segue livre.
+    `power_attestation`: None = procura o irmão; caminho = usa esse arquivo;
+    False = bypass EXPLÍCITO (só para teste de mecânica do registro — nunca em
+    pesquisa real).
+
+    Append-only quanto a vereditos: substituir o veredito de uma trial preserva
+    o estado anterior em `superseded`, com o instante da substituição. Sem isso,
+    a mudança seria invisível para quem lê o registro depois — que é o que a
+    auditoria adversarial 2026-09-05 (achado 3) explorou.
 
     Punição global: para trial NOVA protegida, `metric` e
     `pipeline_fingerprint` são obrigatórios e devem casar com o atestado ainda
@@ -403,6 +448,88 @@ def register_trial(
         )
     finally:
         _release_trials_lock(lock_path)
+
+
+def _require_valid_attestation(
+    name: str,
+    *,
+    trials_path: Path,
+    power_attestation: Path | str | bool | None,
+    metric: str | None,
+    pipeline_fingerprint: str | None,
+    motivo: str,
+) -> None:
+    """Exige atestado de poder válido, ou levanta. `motivo` entra nas mensagens.
+
+    Usada nos DOIS caminhos que produzem um veredito: criar trial nova e mudar o
+    veredito de uma existente. Auditoria adversarial 2026-09-05, achado 3: esta
+    checagem vivia só no ramo de criação, e o caminho de atualização passava por
+    fora dela.
+    """
+    att = (
+        Path(power_attestation)
+        if isinstance(power_attestation, (str, Path))
+        else attestation_path_for(trials_path)
+    )
+    attestation = _load_attestation(att)
+    required = {
+        "schema_version",
+        "passed_at",
+        "expires_at",
+        "core_version",
+        "metric",
+        "pipeline_fingerprint",
+    }
+    if (
+        not attestation
+        or attestation.get("schema_version") != _ATTESTATION_SCHEMA_VERSION
+        or not required <= attestation.keys()
+        or _parse_utc_z(attestation.get("passed_at")) is None
+    ):
+        raise PowerAttestationMissingError(
+            f"{motivo} '{name}' sem atestado de controle positivo válido "
+            f"({att}) — rode testing.harness.attest_pipeline_power antes de registrar."
+        )
+    try:
+        expires_at = datetime.fromisoformat(attestation["expires_at"].replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        raise PowerAttestationMissingError(
+            f"atestado inválido ({att}): expires_at ausente ou inválido"
+        )
+    if expires_at.tzinfo is None:
+        raise PowerAttestationMissingError(
+            f"atestado inválido ({att}): expires_at deve ter timezone"
+        )
+    if expires_at <= datetime.now(UTC):
+        raise PowerAttestationMissingError(f"atestado expirado ({att}); reate o pipeline")
+    current_core_version = version("predictor-core")
+    if attestation["core_version"] != current_core_version:
+        raise PowerAttestationMissingError(
+            f"atestado ({att}) foi emitido para core {attestation['core_version']!r}, "
+            f"mas o core atual é {current_core_version!r}; reate o pipeline"
+        )
+    if not isinstance(metric, str) or not metric:
+        raise MetricMismatchError(
+            f"{motivo} '{name}' deve declarar metric para casar com o atestado"
+        )
+    if attestation["metric"] != metric:
+        raise MetricMismatchError(
+            f"{motivo} '{name}' declara metric={metric!r} mas o atestado ({att}) "
+            f"foi emitido com metric={attestation['metric']!r}"
+        )
+    if not isinstance(pipeline_fingerprint, str) or not pipeline_fingerprint:
+        raise PowerAttestationMissingError(
+            f"{motivo} '{name}' deve declarar pipeline_fingerprint do harness atestado"
+        )
+    if attestation["pipeline_fingerprint"] != pipeline_fingerprint:
+        raise PowerAttestationMissingError(
+            f"{motivo} '{name}' usa pipeline_fingerprint diferente do atestado ({att})"
+        )
+
+
+def _veredito_de(trial: Mapping[str, Any]) -> dict[str, Any]:
+    """O que, numa entrada, constitui a AFIRMAÇÃO — e não o comentário."""
+    return {"status": trial.get("status"), "sharpe": trial.get("sharpe")}
 
 
 def _register_trial_locked(
@@ -457,71 +584,44 @@ def _register_trial_locked(
                     "nova: registre com um name novo (N+1)."
                 )
             entry["registered_at"] = t.get("registered_at", stamp)
+            # Auditoria adversarial 2026-09-05, achado 3: mudar o VEREDITO de uma
+            # trial existente é produzir uma afirmação nova, e produzir afirmação
+            # exige atestado de poder — exatamente como criar uma trial. Sem esta
+            # trava, uma `refutada` virava `comprovada` sem controle positivo
+            # nenhum, e o estado anterior desaparecia sem deixar rastro.
+            anterior, atual = _veredito_de(t), _veredito_de(entry)
+            if anterior != atual:
+                if power_attestation is not False:
+                    _require_valid_attestation(
+                        name,
+                        trials_path=p,
+                        power_attestation=power_attestation,
+                        metric=entry.get("metric"),
+                        pipeline_fingerprint=pipeline_fingerprint,
+                        motivo="mudança de veredito na trial",
+                    )
+                # O registro é append-only quanto a vereditos: o estado anterior
+                # é preservado, não sobrescrito. Sem isso, a mudança seria
+                # invisível para quem lê o registro depois.
+                historico = list(t.get("superseded") or [])
+                historico.append(
+                    {**anterior, "registered_at": t.get("registered_at"), "superseded_at": stamp}
+                )
+                entry["superseded"] = historico
+            elif t.get("superseded"):
+                entry["superseded"] = list(t["superseded"])
             trials[i] = entry
             break
     else:
         if power_attestation is not False:
-            att = (
-                Path(power_attestation)
-                if isinstance(power_attestation, (str, Path))
-                else attestation_path_for(p)
+            _require_valid_attestation(
+                name,
+                trials_path=p,
+                power_attestation=power_attestation,
+                metric=metric,
+                pipeline_fingerprint=pipeline_fingerprint,
+                motivo="trial nova",
             )
-            attestation = _load_attestation(att)
-            required = {
-                "schema_version",
-                "passed_at",
-                "expires_at",
-                "core_version",
-                "metric",
-                "pipeline_fingerprint",
-            }
-            if (
-                not attestation
-                or attestation.get("schema_version") != _ATTESTATION_SCHEMA_VERSION
-                or not required <= attestation.keys()
-                or _parse_utc_z(attestation.get("passed_at")) is None
-            ):
-                raise PowerAttestationMissingError(
-                    f"trial nova '{name}' sem atestado de controle positivo válido "
-                    f"({att}) — rode testing.harness.attest_pipeline_power antes de registrar."
-                )
-            try:
-                expires_at = datetime.fromisoformat(
-                    attestation["expires_at"].replace("Z", "+00:00")
-                )
-            except (TypeError, ValueError):
-                raise PowerAttestationMissingError(
-                    f"atestado inválido ({att}): expires_at ausente ou inválido"
-                )
-            if expires_at.tzinfo is None:
-                raise PowerAttestationMissingError(
-                    f"atestado inválido ({att}): expires_at deve ter timezone"
-                )
-            if expires_at <= datetime.now(UTC):
-                raise PowerAttestationMissingError(f"atestado expirado ({att}); reate o pipeline")
-            current_core_version = version("predictor-core")
-            if attestation["core_version"] != current_core_version:
-                raise PowerAttestationMissingError(
-                    f"atestado ({att}) foi emitido para core {attestation['core_version']!r}, "
-                    f"mas o core atual é {current_core_version!r}; reate o pipeline"
-                )
-            if not isinstance(metric, str) or not metric:
-                raise MetricMismatchError(
-                    f"trial nova '{name}' deve declarar metric para casar com o atestado"
-                )
-            if attestation["metric"] != metric:
-                raise MetricMismatchError(
-                    f"trial nova '{name}' declara metric={metric!r} mas o atestado ({att}) "
-                    f"foi emitido com metric={attestation['metric']!r}"
-                )
-            if not isinstance(pipeline_fingerprint, str) or not pipeline_fingerprint:
-                raise PowerAttestationMissingError(
-                    f"trial nova '{name}' deve declarar pipeline_fingerprint do harness atestado"
-                )
-            if attestation["pipeline_fingerprint"] != pipeline_fingerprint:
-                raise PowerAttestationMissingError(
-                    f"trial nova '{name}' usa pipeline_fingerprint diferente do atestado ({att})"
-                )
         trials.append(entry)
     errs = validate_trials(trials)
     if errs:

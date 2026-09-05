@@ -39,12 +39,17 @@ def test_register_and_load(tmp_path):
 def test_reregister_same_name_updates_not_appends(tmp_path):
     p = tmp_path / "trials.json"
     register_trial("v1", params={"h": 7}, sharpe=0.1, path=p, now="2026-01-01T00:00:00Z", **_NOGATE)
-    # update de trial EXISTENTE não passa pela trava (maturação automática)
-    register_trial("v1", params={"h": 7}, sharpe=0.9, path=p, now="2026-02-01T00:00:00Z")
+    # Update de trial EXISTENTE substitui em vez de acrescentar, e preserva o
+    # registered_at original. Desde a auditoria adversarial 2026-09-05 (achado
+    # 3), mudar sharpe/status é mudança de VEREDITO e exige atestado — aqui o
+    # bypass explícito faz o papel dele, como no registro inicial.
+    register_trial("v1", params={"h": 7}, sharpe=0.9, path=p, now="2026-02-01T00:00:00Z", **_NOGATE)
     trials = load_trials(p)
     assert len(trials) == 1
     assert trials[0]["sharpe"] == 0.9  # valor atualizado
     assert trials[0]["registered_at"] == "2026-01-01T00:00:00Z"  # data original preservada
+    # o veredito anterior não some: fica no histórico append-only
+    assert [h["sharpe"] for h in trials[0]["superseded"]] == [0.1]
 
 
 # --- governança de identidade (N+1) — promovida do previsao-cripto ------------
