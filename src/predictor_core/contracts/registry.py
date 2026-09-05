@@ -17,6 +17,7 @@ from predictor_core.contracts.trial_v2 import (  # noqa: F401
     validate_trial_v2,
 )
 from predictor_core.measurement.trials import (  # noqa: F401
+    DeflationNotEstimableError,
     MetricMismatchError,
     PowerAttestationMissingError,
     TrialRegistry,
@@ -34,6 +35,7 @@ __all__ = [
     "load_trials",
     "validate_trials",
     "deflated_sharpe_ratio",
+    "DeflationNotEstimableError",
     "expected_max_sharpe",
     "attestation_path_for",
     "PowerAttestationMissingError",

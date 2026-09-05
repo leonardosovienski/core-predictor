@@ -677,20 +677,68 @@ def expected_max_sharpe(n_trials: int, var_trials_sr: float) -> float:
     return math.sqrt(var_trials_sr) * ((1.0 - _EULER) * z1 + _EULER * z2)
 
 
-def deflated_sharpe_ratio(returns: list, trial_sharpes: list) -> dict:
+class DeflationNotEstimableError(RuntimeError):
+    """`V[SR]` não é estimável — o DSR seria PSR puro, sem desconto algum.
+
+    `E[max SR]` é `sqrt(V[SR])` vezes um fator que cresce com N. Com menos de
+    duas tentativas trazendo sharpe numérico não há `V[SR]` para estimar, o
+    fator é multiplicado por zero, e o "Deflated" Sharpe degenera exatamente no
+    PSR com benchmark zero — enquanto continua reportando `n_trials`.
+
+    Auditoria adversarial 2026-09-05, achado 2.
+    """
+
+
+def deflated_sharpe_ratio(returns: list, trial_sharpes: list, *, strict: bool = False) -> dict:
     """DSR = PSR(returns, SR0), SR0 = E[max SR] dado o nº de tentativas registradas.
 
     `trial_sharpes`: SRs por-período das tentativas (None/±inf são tolerados —
-    contam no N, ficam fora da variância). Retorna {dsr, sr0, n_trials}; dsr é
-    P(SR verdadeiro > máximo esperado por sorte)."""
+    contam no N, ficam fora da variância). `dsr` é P(SR verdadeiro > máximo
+    esperado por sorte).
+
+    O desconto tem DOIS insumos, e só um deles é o N: `E[max SR]` é
+    `sqrt(V[SR])` vezes um fator que cresce com N. `V[SR]` é estimado APENAS
+    com as tentativas que registraram sharpe numérico. Quando poucas registram,
+    a variância sai de uma subamostra pequena e possivelmente não
+    representativa, e o desconto fica mais fraco do que o N sugere; quando menos
+    de duas registram, o desconto some por completo e o resultado é PSR puro.
+
+    Por isso o retorno carrega o próprio diagnóstico, e não só o número:
+
+      dsr, sr0, n_trials     — como antes (valores inalterados)
+      n_sharpes              — quantas tentativas entraram em V[SR]
+      sr0_estimable          — False quando V[SR] não pôde ser estimado
+      deflation_applied      — False quando sr0 == 0, isto é, sem desconto
+      sharpe_coverage        — n_sharpes / n_trials, 0.0 com registro vazio
+
+    `strict=True` levanta DeflationNotEstimableError em vez de devolver um
+    número que parece descontado e não está. Use em gate de promoção; o default
+    permanece permissivo para não alterar chamadas existentes.
+
+    Auditoria adversarial 2026-09-05, achado 2: antes desta versão a degeneração
+    era silenciosa — quem lia o resultado via `n_trials` e não via que ele não
+    tinha sido usado.
+    """
     n = len(trial_sharpes)
     finite = [s for s in trial_sharpes if s is not None and math.isfinite(s)]
-    var = variance(finite) if len(finite) >= 2 else 0.0
+    estimable = len(finite) >= 2
+    var = variance(finite) if estimable else 0.0
     sr0 = expected_max_sharpe(n, var)
+    if strict and not estimable:
+        raise DeflationNotEstimableError(
+            f"V[SR] não estimável: {len(finite)} de {n} tentativas registraram sharpe "
+            "numérico (mínimo 2). O DSR seria PSR com benchmark zero — sem desconto "
+            "por número de tentativas. Registre o sharpe das tentativas, ou marque "
+            "explicitamente as que não têm métrica comparável."
+        )
     return {
         "dsr": probabilistic_sharpe_ratio(returns, benchmark_sharpe=sr0),
         "sr0": sr0,
         "n_trials": n,
+        "n_sharpes": len(finite),
+        "sr0_estimable": estimable,
+        "deflation_applied": sr0 > 0.0,
+        "sharpe_coverage": (len(finite) / n) if n else 0.0,
     }
 
 
@@ -744,6 +792,9 @@ class TrialRegistry:
     def sharpes(self) -> list:
         return [t.get("sharpe") for t in self.load()]
 
-    def deflated_sharpe(self, returns: list) -> dict:
-        """DSR de `returns` descontado por TODAS as tentativas registradas no arquivo."""
-        return deflated_sharpe_ratio(returns, self.sharpes())
+    def deflated_sharpe(self, returns: list, *, strict: bool = False) -> dict:
+        """DSR de `returns` descontado por TODAS as tentativas registradas no arquivo.
+
+        `strict=True` recusa devolver número quando o desconto não é estimável —
+        ver `deflated_sharpe_ratio`."""
+        return deflated_sharpe_ratio(returns, self.sharpes(), strict=strict)
