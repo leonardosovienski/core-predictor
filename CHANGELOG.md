@@ -3,9 +3,24 @@
 ## [3.2.0] — a governança científica passa a se defender
 
 Fecha três achados da auditoria adversarial de 2026-09-05
-(`brasileirao-predictor/docs/AUDITORIA_ADVERSARIAL_2026-09-05.md`). Aditivo: uma
-exceção nova, um parâmetro opcional e campos novos no retorno do DSR. Nenhum
-número já publicado muda, e nenhuma chamada existente muda de comportamento.
+(`brasileirao-predictor/docs/AUDITORIA_ADVERSARIAL_2026-09-05.md`). Nenhum número
+já publicado muda.
+
+**Não é um bump de rotina.** A maior parte é aditiva — uma exceção nova, um
+parâmetro opcional e campos novos no retorno do DSR —, mas a seção *Governança*
+abaixo traz uma **mudança de contrato** que quebra consumidor existente:
+`register_trial` passou a exigir atestado de controle positivo também no caminho
+de ATUALIZAÇÃO de `status`/`sharpe`, que antes era isento. Quem atualiza veredito
+de trial existente sem emitir atestado passa a receber
+`PowerAttestationMissingError`.
+
+Consumidor conhecido afetado, medido em 2026-09-06: `cripto-predictor` tem 5
+testes que falham contra o 3.2.0 (`tests/test_experiment_registry.py`,
+`tests/test_trials.py`) — reexecução da mesma config, fecho de sharpe pós-backtest,
+divisão de eras e maturação da H6 usam justamente esse caminho. `stocks-predictor`
+passa 374/374 e `brasileirao-predictor` 914/915 (a falha é de ambiente). Antes de
+bumpar, veja `brasileirao-predictor/docs/AUDITORIA_DOCS_VS_CODIGO_2026-09-06.md`,
+achado A1.
 
 ### Adicionado
 - `DeflationNotEstimableError` e o diagnóstico do Deflated Sharpe: o retorno de
