@@ -1,5 +1,37 @@
 # Changelog — predictor_core
 
+## [3.2.0] — a governança científica passa a se defender
+
+Fecha três achados da auditoria adversarial de 2026-09-05
+(`brasileirao-predictor/docs/AUDITORIA_ADVERSARIAL_2026-09-05.md`). Aditivo: uma
+exceção nova, um parâmetro opcional e campos novos no retorno do DSR. Nenhum
+número já publicado muda, e nenhuma chamada existente muda de comportamento.
+
+### Adicionado
+- `DeflationNotEstimableError` e o diagnóstico do Deflated Sharpe: o retorno de
+  `deflated_sharpe_ratio` passa a trazer `n_sharpes`, `sr0_estimable`,
+  `deflation_applied` e `sharpe_coverage`. `E[max SR]` é `sqrt(V[SR])` vezes um
+  fator que cresce com N — com menos de duas tentativas registrando sharpe,
+  `V[SR]` não existe, `sr0` vira 0 e o "Deflated" Sharpe degenerava em PSR puro
+  **em silêncio**, enquanto seguia anunciando `n_trials`. `strict=True` recusa
+  devolver número quando o desconto não é estimável. (achado 2)
+- `DirtyWorkingTreeError`: `attest_pipeline_power` recusa emitir atestado a
+  partir de árvore de trabalho suja, e passa a gravar `code_version` no próprio
+  atestado. `allow_dirty=True` é o escape explícito, preservando o `;dirty` para
+  que a trial resultante continue identificável como irreprodutível. Fora de um
+  repositório git nada é recusado. (achado 7)
+- Histórico append-only de vereditos: substituir `status`/`sharpe` de uma trial
+  preserva o estado anterior em `superseded`, com `superseded_at`. (achado 3)
+
+### Governança
+- **Mudança de contrato:** produzir veredito exige atestado nos DOIS caminhos que
+  produzem veredito — criar trial nova e mudar `status`/`sharpe` de uma
+  existente. O caminho de atualização era isento, e por ele uma trial `refutada`
+  virava `comprovada` sem controle positivo nenhum, com o estado anterior
+  desaparecendo sem rastro. Atualizar apenas `notes` segue livre.
+  Custo conhecido: uma coorte prospectiva que atualiza resultado agora precisa
+  de atestado vigente, e o atestado vale 7 dias. (achado 3)
+
 ## [3.1.0] — registro prospectivo e fronteira temporal
 
 ### Adicionado
