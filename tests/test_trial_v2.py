@@ -166,7 +166,7 @@ def test_dataset_fingerprint_contract_covers_rows_fields_and_order():
 
 def test_code_version_reports_package_and_real_git_sha():
     value = current_code_version()
-    assert value.startswith("package:3.1.0;git:")
+    assert value.startswith("package:3.2.0;git:")
     assert "git:" + "0" * 40 not in value
 
 
