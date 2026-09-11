@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "predictor-core"
-version = "3.2.0"
+version = "3.2.1"
 description = "Canonical scientific contracts and measurement library for Predictor domains"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -72,4 +72,15 @@ typeCheckingMode = "basic"
 [dependency-groups]
 dev = [{ include-group = "quality" }, { include-group = "test" }]
 quality = ["build>=1.3,<2", "pre-commit>=4.3,<5", "pyright>=1.1.403,<2", "ruff>=0.12.7,<1"]
+architecture = ["import-linter>=2.15,<3"]
 test = ["coverage[toml]>=7.10,<8", "pydantic>=2.11,<3", "pytest>=9.0.3,<10", "pytest-cov>=6.2,<8"]
+
+[tool.importlinter]
+root_package = "predictor_core"
+exclude_type_checking_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Scientific scalar contracts do not depend on I/O or measurement"
+type = "forbidden"
+source_modules = ["predictor_core.contracts.scientific"]
+forbidden_modules = ["predictor_core.kernel.net", "predictor_core.kernel.infra", "predictor_core.measurement", "predictor_core.testing"]

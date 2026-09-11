@@ -1,5 +1,12 @@
 # Changelog — predictor_core
 
+## [3.2.1] — candidato local, não publicado
+
+- Fachada pública carrega módulos sob demanda, preservando os nomes existentes.
+- Contratos de recursos e latência recusam valores não finitos.
+- Gate de imports impede dependências de infraestrutura na camada científica.
+- Protocolos, attestations e resultados científicos não foram reemitidos.
+
 ## [3.2.0] — a governança científica passa a se defender
 
 Fecha três achados da auditoria adversarial de 2026-09-05

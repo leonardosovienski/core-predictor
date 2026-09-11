@@ -29,7 +29,9 @@ jobs:
           version: "0.12.1"
           enable-cache: true
       - name: Install locked environment
-        run: uv sync --frozen --python ${{ matrix.python }} --group dev --extra http --extra scraping
+        run: uv sync --frozen --python ${{ matrix.python }} --group dev --group architecture --extra http --extra scraping
+      - name: Scientific architecture boundary
+        run: uv run --no-sync lint-imports
       - name: Test
         run: |
           uv run --no-sync coverage erase

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
@@ -94,7 +95,11 @@ class LatencySLA:
     p99_seconds: float
 
     def __post_init__(self) -> None:
-        if self.median_seconds < 0 or self.p99_seconds < self.median_seconds:
+        if (
+            not all(math.isfinite(value) for value in (self.median_seconds, self.p99_seconds))
+            or self.median_seconds < 0
+            or self.p99_seconds < self.median_seconds
+        ):
             raise ValueError("latency SLA requires 0 <= median_seconds <= p99_seconds")
 
 
@@ -104,7 +109,13 @@ class ResourceBudget:
     storage_gb_month: float
 
     def __post_init__(self) -> None:
-        if self.traffic_mb_month <= 0 or self.storage_gb_month <= 0:
+        if (
+            not all(
+                math.isfinite(value) for value in (self.traffic_mb_month, self.storage_gb_month)
+            )
+            or self.traffic_mb_month <= 0
+            or self.storage_gb_month <= 0
+        ):
             raise ValueError("traffic and storage budgets must be positive")
 
 
