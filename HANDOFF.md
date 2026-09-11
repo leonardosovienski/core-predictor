@@ -1,5 +1,9 @@
 # HANDOFF — predictor-core
 
+## Entrega arquitetural publicada — 11/09/2026
+
+Versão **3.2.1** publicada: [release e artefatos](https://github.com/leonardosovienski/core-predictor/releases/tag/v3.2.1). [CI de engenharia aprovada](https://github.com/leonardosovienski/core-predictor/actions/runs/34627786114) para a fonte `7bb212cfa06333886e11e849b209c5aab801c04b`. Consulte [ARCHITECTURE_IMPLEMENTATION.md](ARCHITECTURE_IMPLEMENTATION.md) para comportamento, migração e limites. Este registro atualiza a entrega de software; estados científicos e registros datados abaixo conservam sua autoridade e contexto histórico.
+
 **Estado corrente: 2026-09-02 — versão 3.1.0.**
 
 Biblioteca científica instalável, com source em `src/predictor_core/`, Python 3.13
