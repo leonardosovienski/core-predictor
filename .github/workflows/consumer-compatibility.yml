@@ -1,0 +1,49 @@
+name: Pinned consumer compatibility
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/consumer-compatibility.yml'
+      - 'tools/compatibility_candidate.json'
+
+permissions:
+  contents: read
+
+jobs:
+  plugins:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: leonardosovienski/ecosystem-predictor
+          ref: 6b236fc57fccc35ad50aff223f7cf21ec4ab1ae9
+          path: integration-ecosystem
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install exact consumer sources and distributed shared wheels
+        working-directory: integration-ecosystem
+        run: |
+          python -m venv "$RUNNER_TEMP/compatibility"
+          python scripts/install_compatibility_candidate.py --python "$RUNNER_TEMP/compatibility/bin/python" --manifest ../tools/compatibility_candidate.json
+      - name: Verify real plugin behavior, hashes and isolation
+        working-directory: integration-ecosystem
+        env:
+          CRIPTO_ROOT: ${{ runner.temp }}/crypto-integration
+          COMPATIBILITY_RECEIPT: ${{ runner.temp }}/compatibility-receipt.json
+        run: |
+          "$RUNNER_TEMP/compatibility/bin/python" scripts/check_real_plugin_integration.py --manifest ../tools/compatibility_candidate.json
+          "$RUNNER_TEMP/compatibility/bin/python" -m pip check
+          "$RUNNER_TEMP/compatibility/bin/python" -m pip freeze > "$RUNNER_TEMP/compatibility-dependencies.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pinned-consumer-compatibility
+          path: |
+            ${{ runner.temp }}/compatibility-receipt.json
+            ${{ runner.temp }}/compatibility-dependencies.txt
+          if-no-files-found: warn
