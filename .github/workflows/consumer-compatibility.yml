@@ -2,6 +2,8 @@ name: Pinned consumer compatibility
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
     paths:
@@ -20,7 +22,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: leonardosovienski/ecosystem-predictor
-          ref: 6b236fc57fccc35ad50aff223f7cf21ec4ab1ae9
+          ref: ae74476d66b7a1e43c635b95429eec1cb4460d17
           path: integration-ecosystem
       - uses: actions/setup-python@v5
         with:

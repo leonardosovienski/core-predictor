@@ -56,3 +56,24 @@ são mantidos no manifesto externo da missão; este texto não declara consolida
 histórico. As anotações de publicação/continuidade dos dois commits exclusivos ficam
 recuperáveis nos backups verificados. Não copiar sua afirmação de branch atual para
 o candidato novo. Nenhum atestado científico histórico foi atualizado.
+
+## Retomada integral — 13/09/2026
+
+O teste dedicado de compatibilidade foi fixado em Ecosystem `ae74476`, Crypto
+`59f6cf8`, Brasileirão `0f69ba8`, Stocks `3066321`, CAIN `203048c` (0.4.10)
+e Ops publicado 4.2.1. Os SHAs completos e hashes de distribuição estão em
+`tools/compatibility_candidate.json`. O job também roda em push de main.
+
+Os contratos de integração diferem: Crypto admite atestados produzidos por seu
+controle com core; BR admite claims de `docs/EVIDENCE_REGISTRY.md`; Stocks admite
+metadados de `real-v020.json`. Testar os três transportes não afirma três novos
+resultados científicos. Reexecuções devem usar saídas novas e CAIN instalado:
+BR fornece `tools/integration_validation/run.py`; Stocks fornece
+`tools/export_cain_bundle.py` e `tools/export_cain_status.py`; Crypto fornece
+`crypto_research_export.bundle.export`. Aprovação, duplicação, adulteração e
+consulta offline são obrigatórias. Não copiar atestados antigos como se novos.
+
+Runtime do core permanece idêntico à distribuição 3.2.1. Não há nova release:
+CI, ferramenta de teste e documentação não mudam os 41 arquivos de runtime.
+O recibo externo da missão identifica o SHA final, CI, clone limpo e eventual
+limpeza, sem fabricar um commit autorreferente nem antecipar seu aceite.
