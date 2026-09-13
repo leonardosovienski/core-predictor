@@ -58,8 +58,10 @@ jobs:
           temp_dir="$(mktemp -d)"
           uv venv --python 3.13 "$temp_dir/.venv"
           uv pip install --python "$temp_dir/.venv/bin/python" dist/*.whl
+          wheel="$(realpath dist/*.whl)"
+          cp tools/check_installed_wheel.py "$temp_dir/check_installed_wheel.py"
           cd "$temp_dir"
-          "$temp_dir/.venv/bin/python" -I -c "import predictor_core; print(predictor_core.__version__)"
+          "$temp_dir/.venv/bin/python" -I check_installed_wheel.py --wheel "$wheel"
 
   audit:
     name: Security and distribution audit

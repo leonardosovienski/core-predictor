@@ -1,0 +1,44 @@
+{
+  "schema_version": "architecture-compatibility/1",
+  "consumers": {
+    "cripto-predictor": {
+      "repository": "https://github.com/leonardosovienski/cripto-predictor",
+      "commit": "59f6cf80d4a95153efa159c8b6e0d7d5e7f540ff",
+      "version": "1.1.0"
+    },
+    "stocks-predictor": {
+      "repository": "https://github.com/leonardosovienski/stocks-predictor",
+      "commit": "3066321e599ee15dd0ace4167d2791545ce6eb95",
+      "version": "0.2.0"
+    },
+    "brasileirao-predictor": {
+      "repository": "https://github.com/leonardosovienski/brasileirao-predictor",
+      "commit": "0f69ba8a1da744eb4239b680fc0389f9dc631987",
+      "version": "0.2.0"
+    },
+    "cain": {
+      "repository": "https://github.com/leonardosovienski/cain",
+      "commit": "203048c752973cd730a18345a739c29413eede12",
+      "version": "0.4.10"
+    }
+  },
+  "shared": {
+    "predictor-core": {
+      "version": "3.2.1",
+      "url": "https://github.com/leonardosovienski/core-predictor/releases/download/v3.2.1/predictor_core-3.2.1-py3-none-any.whl",
+      "hash": "sha256:10ef42f34ace8bb2df5f83ff7de2ceec79b035a25ea0a690e8942bd60d2fb4e3"
+    },
+    "predictor-ops": {
+      "version": "4.2.1",
+      "url": "https://github.com/leonardosovienski/predictor-ops/releases/download/v4.2.1/predictor_ops-4.2.1-py3-none-any.whl",
+      "hash": "sha256:da4fa540703879669caba919521ec7d3c33734b5d57781122823df8817346f0e"
+    }
+  },
+  "capital_authorized": false,
+  "authority": "Engineering compatibility fixture for this mission; not a scientific attestation",
+  "research_transport": {
+    "publisher": "1.0.1",
+    "cain_reader": "1.0.1",
+    "contract": "ResearchSnapshotV1"
+  }
+}

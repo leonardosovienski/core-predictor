@@ -90,9 +90,10 @@ jobs:
           isolated="$(mktemp -d)"
           uv venv --python 3.13 "$isolated/.venv"
           uv pip install --python "$isolated/.venv/bin/python" dist/*.whl
+          wheel="$(realpath dist/*.whl)"
+          cp tools/check_installed_wheel.py "$isolated/check_installed_wheel.py"
           cd "$isolated"
-          "$isolated/.venv/bin/python" -I -c \
-            "import predictor_core; print(predictor_core.__version__)"
+          "$isolated/.venv/bin/python" -I check_installed_wheel.py --wheel "$wheel"
 
       - name: Generate artifact attestations
         if: startsWith(github.ref, 'refs/tags/')

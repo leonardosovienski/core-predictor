@@ -21,7 +21,7 @@ uv build --wheel
 Consumers install a released artifact, for example:
 
 ```bash
-uv add "predictor-core==3.1.0"
+uv add "predictor-core @ https://github.com/leonardosovienski/core-predictor/releases/download/v3.2.1/predictor_core-3.2.1-py3-none-any.whl"
 python -c "import predictor_core; print(predictor_core.__version__)"
 ```
 
@@ -54,6 +54,15 @@ to evaluate them, but it does not choose trades, bets, rebalances or capital sta
 `--write` is permanently rejected. Distribution occurs through wheels.
 
 
-## Implementação arquitetural local — 2026-09-11
+## Registro histórico da implementação local — 2026-09-11
 
 As alterações candidatas, seus limites, verificações e rollback estão em [ARCHITECTURE_IMPLEMENTATION.md](ARCHITECTURE_IMPLEMENTATION.md). Esta implementação local não publica releases, não atualiza automaticamente os consumidores e não altera os vereditos científicos históricos.
+
+## Validação da distribuição
+
+A CI e o gate de release executam `tools/check_installed_wheel.py` com Python `-I`
+fora do checkout, em ambiente mínimo. O gate confere SHA256, versão e bytes do
+pacote instalado, e testa replay, métricas, bootstrap, contratos e aliases.
+Essa validação de engenharia não certifica resultados científicos dos domínios.
+O [registro datado anterior](PUBLICATION_STATUS_20260912.md) permanece histórico;
+o [handoff](HANDOFF.md) separa a rodada atual.
