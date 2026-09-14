@@ -24,7 +24,7 @@ jobs:
           repository: leonardosovienski/ecosystem-predictor
           ref: ae74476d66b7a1e43c635b95429eec1cb4460d17
           path: integration-ecosystem
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
       - name: Install exact consumer sources and distributed shared wheels
