@@ -1,14 +1,10 @@
+# Aposentado por D-13 (integração V1 extinta, qualificação pré-treinamento, HYG-015).
+# Só roda por workflow_dispatch; fora do escopo de HOSTED_CI. Preservado como
+# referência para os testes da integração (Etapa B).
 name: Pinned consumer compatibility
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-    paths:
-      - '.github/workflows/consumer-compatibility.yml'
-      - 'tools/compatibility_candidate.json'
 
 permissions:
   contents: read
