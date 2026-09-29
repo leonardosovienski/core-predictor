@@ -1,6 +1,6 @@
 # Apaga branches remotas já integradas (ou inúteis) por workflow_dispatch, uma por linha, nunca `main`.
 # O push de deleção de branches é bloqueado no ambiente de desenvolvimento que abriu este workflow;
-# o runner faz o `git push --delete` com o token do próprio job.
+# o runner apaga a ref pela API do GitHub com o token do próprio job.
 name: Delete branches
 
 on:
@@ -23,13 +23,14 @@ jobs:
       - shell: bash
         env:
           BRANCHES: ${{ inputs.branches }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           while IFS= read -r b; do
             b="${b//$'\r'/}"; b="$(echo "$b" | xargs)"; [[ -z "$b" ]] && continue
             [[ "$b" == "main" ]] && { echo "recusado: main" >&2; exit 1; }
             if git ls-remote --exit-code --heads origin "$b" >/dev/null; then
-              git push origin --delete "$b" && echo "apagada: $b"
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$b" && echo "apagada: $b"
             else
               echo "inexistente: $b"
             fi
