@@ -13,7 +13,7 @@ standard `src/predictor_core` layout and does not depend on the checkout directo
 Python 3.13 is the supported baseline. Python 3.14 is tested as experimental.
 
 ```bash
-uv sync --frozen --group dev
+uv sync --locked --group dev
 uv run pytest
 uv build --wheel
 ```
