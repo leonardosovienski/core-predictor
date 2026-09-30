@@ -1,6 +1,6 @@
 # Changelog — predictor_core
 
-## [3.2.2rc1] — não publicada
+## [3.2.2] — não publicada
 
 - Só documentação e CI: README com a seção "Estado em 2026-09-30" e a validação da distribuição; comandos `--locked`.
   Como o README entra na METADATA da wheel, o número mudou sem release. Nenhuma linha de código mudou desde a 3.2.1.

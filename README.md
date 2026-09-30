@@ -3,7 +3,7 @@
 ## Estado em 2026-09-30
 
 Wheel publicada e consumida por todo o stack: **3.2.1** (única wheel, por URL + sha256, nos `uv.lock` de cripto, brasileirão e stocks;
-alvo das attestations do qualificador). O `main` declara `3.2.2rc1` **não publicada**: desde a tag `v3.2.1` só mudaram documentação e CI,
+alvo das attestations do qualificador). O `main` declara `3.2.2` **não publicada**: desde a tag `v3.2.1` só mudaram documentação e CI,
 e o README entra na METADATA da wheel, por isso o número mudou sem release. Estado vivo em [docs/ESTADO_2026-09-30.md](docs/ESTADO_2026-09-30.md).
 
 ## Entrega arquitetural publicada — 11/09/2026
