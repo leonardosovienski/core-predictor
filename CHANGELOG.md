@@ -1,6 +1,11 @@
 # Changelog — predictor_core
 
-## [3.2.1] — candidato local, não publicado
+## [3.2.2rc1] — não publicada
+
+- Só documentação e CI: README com a seção "Estado em 2026-09-30" e a validação da distribuição; comandos `--locked`.
+  Como o README entra na METADATA da wheel, o número mudou sem release. Nenhuma linha de código mudou desde a 3.2.1.
+
+## [3.2.1] — publicada (release `v3.2.1`), wheel única de todo o stack
 
 - Fachada pública carrega módulos sob demanda, preservando os nomes existentes.
 - Contratos de recursos e latência recusam valores não finitos.
